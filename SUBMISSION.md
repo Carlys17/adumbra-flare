@@ -19,6 +19,10 @@ front-running, plus protocols and aggregators that want MEV-resistant execution 
 asking users to change wallets or workflows.
 
 ## 5. Demo Link / Video / Working App
+- **Video walkthrough** — `media/demo.gif` (also `media/demo.mp4`), rendered in the
+  README. It is a real recorded run against the live Coston2 deployment: enclave signs,
+  contract verifies, swap settles, balances and nonce change on chain. Reproduce it with
+  `bash scripts/demo_walkthrough.sh`.
 - **Live on Coston2** — verified enclave-signed swap:
   https://coston2-explorer.flare.network/tx/0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6
 - **Frontend** — `frontend/index.html` (viem + MetaMask, wired to the Coston2 deployment).
@@ -81,6 +85,8 @@ Adumbra was built from scratch during the hackathon; there was no pre-existing p
 - `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple, a shape
   `cast` cannot parse.
 - `scripts/e2e_demo.sh` — full local end-to-end verification run.
+- `scripts/demo_walkthrough.sh` — narrated live-network walkthrough, recorded to
+  `media/demo.gif` / `.mp4`.
 - 6 Foundry tests: happy path, expired order, replayed nonce, wrong signer, tampered
   order, slippage failure.
 - Coston2 deployment plus a verified on-chain enclave-signed swap.
@@ -90,9 +96,12 @@ Deployed on **Flare Coston2** (chainId 114, RPC `https://coston2-api.flare.netwo
 
 | Contract | Address |
 |---|---|
-| AdumbraRouter | `0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7` |
-| Mock FXRP | `0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5` |
-| Mock USDC | `0x1cAAb501Cb8D7959e5Def5577863a4b346523552` |
+| AdumbraRouter | [`0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7`](https://coston2-explorer.flare.network/address/0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7#code) |
+| Mock FXRP | [`0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5`](https://coston2-explorer.flare.network/address/0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5#code) |
+| Mock USDC | [`0x1cAAb501Cb8D7959e5Def5577863a4b346523552`](https://coston2-explorer.flare.network/address/0x1cAAb501Cb8D7959e5Def5577863a4b346523552#code) |
+
+All three contracts are **source-verified** on the Coston2 explorer (Solidity 0.8.33),
+so judges can read the deployed bytecode against the repo source directly.
 
 Verified enclave-signed swap: tx `0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6`
 (block 33625271) — 100 FXRP in, 51.74 USDC out, router nonce 0 → 1.

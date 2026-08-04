@@ -15,13 +15,24 @@ searchers have nothing to front-run.
 
 Flare Summer Signal — **Bounty 2: Confidential Compute Apps** ($6,000 pool)
 
+## Demo
+
+![Adumbra end-to-end demo](media/demo.gif)
+
+The recording above is a real run against the live Coston2 deployment: the enclave signs
+an order, the contract verifies it, and the swap settles on chain. Reproduce it with
+`bash scripts/demo_walkthrough.sh` (raw asciinema cast in `media/demo.cast`, mp4 in
+`media/demo.mp4`).
+
 ## Live Deployment (Flare Coston2, chainId 114)
 
 | Contract | Address |
 |---|---|
-| AdumbraRouter | `0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7` |
-| Mock FXRP | `0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5` |
-| Mock USDC | `0x1cAAb501Cb8D7959e5Def5577863a4b346523552` |
+| AdumbraRouter | [`0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7`](https://coston2-explorer.flare.network/address/0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7#code) |
+| Mock FXRP | [`0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5`](https://coston2-explorer.flare.network/address/0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5#code) |
+| Mock USDC | [`0x1cAAb501Cb8D7959e5Def5577863a4b346523552`](https://coston2-explorer.flare.network/address/0x1cAAb501Cb8D7959e5Def5577863a4b346523552#code) |
+
+All three contracts are **source-verified** on the Coston2 explorer.
 
 Verified enclave-signed swap on Coston2: tx [`0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6`](https://coston2-explorer.flare.network/tx/0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6) — 100 FXRP in, 51.74 USDC out, block 33625271, router nonce 0 → 1.
 
@@ -101,7 +112,12 @@ adumbra-flare/
 │   ├── Cargo.toml
 │   └── src/main.rs            # enclave service: CLI + HTTP :7070 modes
 ├── frontend/index.html        # viem + MetaMask wallet UI
+├── media/
+│   ├── demo.gif               # end-to-end run against live Coston2
+│   ├── demo.mp4
+│   └── demo.cast              # raw asciinema recording
 ├── scripts/
+│   ├── demo_walkthrough.sh    # narrated live-network demo (recorded above)
 │   ├── e2e_demo.sh            # full local end-to-end run
 │   └── encode_calldata.py     # nested-tuple ABI encoder
 ├── SUBMISSION.md
