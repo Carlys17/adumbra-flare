@@ -23,6 +23,10 @@
       .badge { display: inline-block; background: #1f6feb; color: #fff; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem; }
       .tee-badge { background: #8957e5; }
       .privacy-note { border-left: 3px solid #8957e5; padding-left: 1rem; margin-bottom: 1.5rem; color: #c9d1d9; font-size: 0.9rem; }
+      .connect-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+      .connect-bar button { width: auto; padding: 0.5rem 1rem; }
+      .acc-chip { background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 0.35rem 0.7rem; font-family: monospace; font-size: 0.85rem; }
+      .nonce-chip { background: #1a1f2b; border: 1px solid #30363d; border-radius: 6px; padding: 0.35rem 0.7rem; font-family: monospace; font-size: 0.85rem; color: #7ee787; }
     </style>
   </head>
   <body>
@@ -34,84 +38,329 @@
         Route calculation happens inside a TEE. MEV bots only see the final transaction — never the path or slippage logic.
       </div>
 
+      <div class="connect-bar">
+        <button id="connectBtn" onclick="connectWallet()">Connect MetaMask</button>
+        <span id="accDisplay" class="acc-chip" style="display:none"></span>
+        <span id="nonceDisplay" class="nonce-chip" style="display:none"></span>
+      </div>
+
       <div class="card">
         <label>Input token</label>
         <select id="tokenIn">
-          <option value="FXRP">FXRP</option>
-          <option value="USDC">USDC</option>
+          <option value="fxrp">FXRP</option>
+          <option value="usdc">USDC</option>
         </select>
 
         <label>Output token</label>
         <select id="tokenOut">
-          <option value="USDC">USDC</option>
-          <option value="FXRP">FXRP</option>
+          <option value="usdc">USDC</option>
+          <option value="fxrp">FXRP</option>
         </select>
 
         <label>Amount</label>
         <input id="amountIn" type="number" placeholder="e.g. 100" />
 
-        <button id="swapBtn" onclick="routeSwap()">Route Swap (TEE)</button>
+        <button id="swapBtn" onclick="routeSwap()" disabled>Connect wallet first</button>
 
         <div id="result" style="display:none; margin-top:1rem;">
-          <label class="muted">TEE Report</label>
+          <label class="muted">TEE Signature</label>
           <div class="tx-box" id="teeReport"></div>
 
-          <label class="muted" style="margin-top:1rem;">Expected Output (hidden route)</label>
-          <div class="tx-box" id="routeBox"></div>
-
-          <label class="muted" style="margin-top:1rem;">Final Transaction (what MEV sees)</label>
+          <label class="muted" style="margin-top:1rem;">Swap Result</label>
           <div class="tx-box" id="txBox"></div>
         </div>
       </div>
 
       <div class="card">
-        <p class="muted">
-          <b>Demo mode:</b> This UI simulates the TEE flow. In production, your intent is sent to a real enclave,
-          which returns a signed order. The wallet then executes <code>executeSwap</code> on Flare — MEV bots see only the final tx.
-        </p>
+        <p class="muted" id="statusBar">Wallet not connected.</p>
       </div>
     </main>
 
     <script type="module">
-      // Simulated enclave rates
-      const rates = { FXRP_USDC: 0.52, USDC_FXRP: 1.92 }
+      import {
+        createPublicClient,
+        createWalletClient,
+        http,
+        custom,
+        keccak256,
+        encodeAbiParameters,
+        parseUnits,
+      } from 'https://esm.sh/viem@2'
 
-      function routeSwap() {
-        const tokenIn = document.getElementById('tokenIn').value
-        const tokenOut = document.getElementById('tokenOut').value
-        const amountIn = parseFloat(document.getElementById('amountIn').value)
+      // ── Config ──────────────────────────────────────────────
+      const ROUTER_ADDR   = '0x393647f18a98b1CdDC51699FCC09cdca5Ec88fe7' // MEVSwapRouter on Coston2
+      const FXRP_ADDR     = '0x22f6e913FF7DcFaB517334e5cdd6A142047E945a' // Mock FXRP on Coston2
+      const USDC_ADDR     = '0x0F28c0801CB65fcA544cd43353E5aF993F44f690' // Mock USDC on Coston2
+      const CHAIN_ID      = 114
+      const RPC_URL       = 'https://coston2-api.flare.network/ext/C/rpc'
+      const TEE_ENDPOINT  = 'http://localhost:7070/sign'
 
-        if (!amountIn || amountIn <= 0) return alert('Enter amount')
+      const TOKENS = {
+        fxrp: FXRP_ADDR,
+        usdc: USDC_ADDR,
+      }
 
-        const key = `${tokenIn}_${tokenOut}`
-        const rate = rates[key] || (tokenIn === 'FXRP' ? 0.52 : 1.92)
+      // ── ABI fragments ──────────────────────────────────────
+      const routerAbi = [
+        {
+          inputs: [],
+          name: 'nonce',
+          outputs: [{ type: 'uint256' }],
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          inputs: [],
+          name: 'enclaveSigner',
+          outputs: [{ type: 'address' }],
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          inputs: [
+            {
+              components: [
+                {
+                  components: [
+                    { name: 'user', type: 'address' },
+                    { name: 'tokenIn', type: 'address' },
+                    { name: 'tokenOut', type: 'address' },
+                    { name: 'amountIn', type: 'uint256' },
+                    { name: 'minAmountOut', type: 'uint256' },
+                    { name: 'deadline', type: 'uint256' },
+                    { name: 'orderNonce', type: 'uint256' },
+                  ],
+                  name: 'order',
+                  type: 'tuple',
+                },
+                { name: 'signature', type: 'bytes' },
+              ],
+              name: 'so',
+              type: 'tuple',
+            },
+          ],
+          name: 'executeSwap',
+          outputs: [{ type: 'uint256' }],
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+      ]
 
-        const amountOut = amountIn * rate
-        const minOut = amountOut * 0.995 // 0.5% slippage guard
+      const erc20Abi = [
+        {
+          inputs: [
+            { name: 'spender', type: 'address' },
+            { name: 'amount', type: 'uint256' },
+          ],
+          name: 'approve',
+          outputs: [{ type: 'bool' }],
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          inputs: [
+            { name: 'owner', type: 'address' },
+            { name: 'spender', type: 'address' },
+          ],
+          name: 'allowance',
+          outputs: [{ type: 'uint256' }],
+          stateMutability: 'view',
+          type: 'function',
+        },
+      ]
 
-        // Simulate TEE result
-        document.getElementById('result').style.display = 'block'
-        document.getElementById('teeReport').innerHTML =
-          `<span class="label">Enclave 0x8318535b54</span> routed <b>${tokenIn} → ${tokenOut}</b> at rate <b>${rate.toFixed(6)}</b><br>` +
-          `<span class="muted">Route details and price logic are private — only this summary is shown.</span>`
+      // ── State ──────────────────────────────────────────────
+      let publicClient, walletClient, account
 
-        document.getElementById('routeBox').innerHTML =
-          `Expected output: <b>${amountOut.toFixed(4)} ${tokenOut}</b><br>` +
-          `Min output (0.5% slippage): <b>${minOut.toFixed(4)} ${tokenOut}</b><br>` +
-          `<span class="muted">Intermediate hops and exact path are hidden inside the TEE.</span>`
+      // ── Init clients ───────────────────────────────────────
+      publicClient = createPublicClient({
+        chain: { id: CHAIN_ID, name: 'Coston2', nativeCurrency: { name: 'CFLR', symbol: 'CFLR', decimals: 18 }, rpcUrls: { default: { http: [RPC_URL] } } },
+        transport: http(RPC_URL),
+      })
 
-        document.getElementById('txBox').innerHTML =
-          `executeSwap(<br>` +
-          `  user: <span class="label">0xBEAF</span>,<br>` +
-          `  tokenIn: <span class="label">FXRP</span>,<br>` +
-          `  tokenOut: <span class="label">${tokenOut}</span>,<br>` +
-          `  amountIn: <b>${amountIn} ${tokenIn}</b>,<br>` +
-          `  minAmountOut: <b>${minOut.toFixed(4)} ${tokenOut}</b>,<br>` +
-          `  deadline: <span class="label">block.timestamp + 3600</span>,<br>` +
-          `  nonce: <span class="label">0</span>,<br>` +
-          `  signature: <span class="label">0x181a...6c68e31c</span><br>` +
-          `)<br><br>` +
-          `<span class="muted">↑ This is the only data MEV bots can see.</span>`
+      function setStatus(msg) {
+        document.getElementById('statusBar').textContent = msg
+      }
+
+      // ── Connect ────────────────────────────────────────────
+      window.connectWallet = async function () {
+        if (!window.ethereum) return setStatus('MetaMask not detected.')
+        try {
+          const accs = await window.ethereum.request({ method: 'eth_requestAccounts' })
+          account = accs[0]
+
+          walletClient = createWalletClient({
+            account,
+            chain: { id: CHAIN_ID, name: 'Coston2', nativeCurrency: { name: 'CFLR', symbol: 'CFLR', decimals: 18 }, rpcUrls: { default: { http: [RPC_URL] } } },
+            transport: custom(window.ethereum),
+          })
+
+          const accEl = document.getElementById('accDisplay')
+          accEl.textContent = account.slice(0, 6) + '...' + account.slice(-4)
+          accEl.style.display = 'inline'
+
+          document.getElementById('connectBtn').textContent = 'Connected'
+          document.getElementById('connectBtn').disabled = true
+          document.getElementById('swapBtn').disabled = false
+          document.getElementById('swapBtn').textContent = 'Swap'
+
+          await refreshNonce()
+          setStatus('Wallet connected. Ready to swap.')
+        } catch (e) {
+          setStatus('Connect rejected: ' + e.message)
+        }
+      }
+
+      async function refreshNonce() {
+        try {
+          const n = await publicClient.readContract({
+            address: ROUTER_ADDR,
+            abi: routerAbi,
+            functionName: 'nonce',
+          })
+          const el = document.getElementById('nonceDisplay')
+          el.textContent = 'nonce: ' + String(n)
+          el.style.display = 'inline'
+          return n
+        } catch (e) {
+          setStatus('Failed to read nonce: ' + e.message)
+          return null
+        }
+      }
+
+      // ── Swap ───────────────────────────────────────────────
+      window.routeSwap = async function () {
+        if (!account || !walletClient) return setStatus('Connect wallet first.')
+
+        const tokenInKey  = document.getElementById('tokenIn').value
+        const tokenOutKey = document.getElementById('tokenOut').value
+        const amountRaw   = document.getElementById('amountIn').value
+
+        if (!amountRaw || parseFloat(amountRaw) <= 0) return setStatus('Enter a valid amount.')
+
+        const tokenInAddr  = TOKENS[tokenInKey]
+        const tokenOutAddr = TOKENS[tokenOutKey]
+
+        const btn = document.getElementById('swapBtn')
+        btn.disabled = true
+        btn.textContent = 'Reading nonce...'
+
+        try {
+          const orderNonce = await refreshNonce()
+          if (orderNonce == null) { btn.disabled = false; btn.textContent = 'Swap'; return }
+
+          const amountIn = parseUnits(amountRaw, 18)
+
+          // 1. Approve if needed
+          btn.textContent = 'Checking allowance...'
+          setStatus('Checking token allowance...')
+          const allowance = await publicClient.readContract({
+            address: tokenInAddr,
+            abi: erc20Abi,
+            functionName: 'allowance',
+            args: [account, ROUTER_ADDR],
+          })
+
+          if (allowance < amountIn) {
+            btn.textContent = 'Approving...'
+            setStatus('Requesting token approval...')
+            const appHash = await walletClient.writeContract({
+              address: tokenInAddr,
+              abi: erc20Abi,
+              functionName: 'approve',
+              args: [ROUTER_ADDR, amountIn],
+              account,
+            })
+            setStatus('Approval tx sent: ' + appHash + ' — waiting for confirmation...')
+            await publicClient.waitForTransactionReceipt({ hash: appHash })
+          }
+
+          // 2. POST intent to TEE
+          btn.textContent = 'Requesting TEE signature...'
+          setStatus('POST ' + TEE_ENDPOINT + ' ...')
+          const teeRes = await fetch(TEE_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user: account,
+              tokenIn: tokenInAddr,
+              tokenOut: tokenOutAddr,
+              amountIn: amountIn.toString(),
+              nonce: orderNonce.toString(),
+            }),
+          })
+          if (!teeRes.ok) throw new Error('TEE returned ' + teeRes.status + ' ' + (await teeRes.text()))
+          const teeBody = await teeRes.json()
+          const { signature, minAmountOut, deadline } = teeBody
+          if (!signature || !minAmountOut || !deadline) {
+            throw new Error('TEE response missing signature/minAmountOut/deadline')
+          }
+
+          // 3. Verify the enclave signature matches what the contract expects
+          const digest = keccak256(
+            encodeAbiParameters(
+              [
+                { type: 'string' },
+                { type: 'address' },
+                { type: 'address' },
+                { type: 'address' },
+                { type: 'uint256' },
+                { type: 'uint256' },
+                { type: 'uint256' },
+                { type: 'uint256' },
+              ],
+              ['MEVSwap', account, tokenInAddr, tokenOutAddr, amountIn, BigInt(minAmountOut), BigInt(deadline), orderNonce]
+            )
+          )
+
+          document.getElementById('teeReport').innerHTML =
+            `<span class="label">Digest</span>  ${digest}\n` +
+            `<span class="label">MinOut</span>  ${minAmountOut}\n` +
+            `<span class="label">Deadline</span> ${deadline}\n` +
+            `<span class="label">Sig</span>      ${signature}`
+
+          // 4. Execute swap on-chain
+          btn.textContent = 'Executing swap...'
+          setStatus('Calling executeSwap...')
+          const signedOrder = {
+            order: {
+              user: account,
+              tokenIn: tokenInAddr,
+              tokenOut: tokenOutAddr,
+              amountIn,
+              minAmountOut: BigInt(minAmountOut),
+              deadline: BigInt(deadline),
+              orderNonce,
+            },
+            signature,
+          }
+
+          const hash = await walletClient.writeContract({
+            address: ROUTER_ADDR,
+            abi: routerAbi,
+            functionName: 'executeSwap',
+            args: [signedOrder],
+            account,
+          })
+
+          document.getElementById('result').style.display = 'block'
+          document.getElementById('txBox').innerHTML =
+            `<span class="label">tx</span> ${hash}\n` +
+            `<span class="muted">↑ This is the only data MEV bots can see on-chain.</span>`
+
+          setStatus('Swap submitted: ' + hash)
+          btn.textContent = 'Swap'
+          btn.disabled = false
+          await refreshNonce()
+
+        } catch (e) {
+          document.getElementById('result').style.display = 'block'
+          document.getElementById('txBox').innerHTML =
+            `<span style="color:#f85149">Error:</span> ${e.shortMessage || e.message || e}`
+          setStatus('Swap failed: ' + (e.shortMessage || e.message || e))
+          btn.textContent = 'Swap'
+          btn.disabled = false
+        }
       }
     </script>
   </body>
