@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MEV-Safe FXRP Swap Router</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; }
+      main { max-width: 680px; margin: 3rem auto; padding: 2rem; }
+      h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+      .subtitle { color: #8b949e; margin-bottom: 2rem; font-size: 0.95rem; }
+      .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+      label { display: block; color: #8b949e; font-size: 0.85rem; margin-bottom: 0.4rem; }
+      input, select { width: 100%; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; padding: 0.6rem 0.8rem; border-radius: 6px; font-size: 1rem; margin-bottom: 0.8rem; }
+      input:focus, select:focus { outline: none; border-color: #58a6ff; }
+      button { width: 100%; background: #238636; color: #fff; border: none; padding: 0.75rem; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: 600; }
+      button:hover { background: #2ea043; }
+      button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+      .tx-box { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 1rem; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; word-break: break-all; margin-top: 1rem; }
+      .label { color: #58a6ff; }
+      .muted { color: #8b949e; font-size: 0.85rem; }
+      .badge { display: inline-block; background: #1f6feb; color: #fff; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem; }
+      .tee-badge { background: #8957e5; }
+      .privacy-note { border-left: 3px solid #8957e5; padding-left: 1rem; margin-bottom: 1.5rem; color: #c9d1d9; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>🔒 MEV-Safe FXRP Swap Router <span class="badge tee-badge">TEE</span></h1>
+      <p class="subtitle">Flare Summer Signal — Bounty 2: Confidential Compute Apps</p>
+
+      <div class="privacy-note">
+        Route calculation happens inside a TEE. MEV bots only see the final transaction — never the path or slippage logic.
+      </div>
+
+      <div class="card">
+        <label>Input token</label>
+        <select id="tokenIn">
+          <option value="FXRP">FXRP</option>
+          <option value="USDC">USDC</option>
+        </select>
+
+        <label>Output token</label>
+        <select id="tokenOut">
+          <option value="USDC">USDC</option>
+          <option value="FXRP">FXRP</option>
+        </select>
+
+        <label>Amount</label>
+        <input id="amountIn" type="number" placeholder="e.g. 100" />
+
+        <button id="swapBtn" onclick="routeSwap()">Route Swap (TEE)</button>
+
+        <div id="result" style="display:none; margin-top:1rem;">
+          <label class="muted">TEE Report</label>
+          <div class="tx-box" id="teeReport"></div>
+
+          <label class="muted" style="margin-top:1rem;">Expected Output (hidden route)</label>
+          <div class="tx-box" id="routeBox"></div>
+
+          <label class="muted" style="margin-top:1rem;">Final Transaction (what MEV sees)</label>
+          <div class="tx-box" id="txBox"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="muted">
+          <b>Demo mode:</b> This UI simulates the TEE flow. In production, your intent is sent to a real enclave,
+          which returns a signed order. The wallet then executes <code>executeSwap</code> on Flare — MEV bots see only the final tx.
+        </p>
+      </div>
+    </main>
+
+    <script type="module">
+      // Simulated enclave rates
+      const rates = { FXRP_USDC: 0.52, USDC_FXRP: 1.92 }
+
+      function routeSwap() {
+        const tokenIn = document.getElementById('tokenIn').value
+        const tokenOut = document.getElementById('tokenOut').value
+        const amountIn = parseFloat(document.getElementById('amountIn').value)
+
+        if (!amountIn || amountIn <= 0) return alert('Enter amount')
+
+        const key = `${tokenIn}_${tokenOut}`
+        const rate = rates[key] || (tokenIn === 'FXRP' ? 0.52 : 1.92)
+
+        const amountOut = amountIn * rate
+        const minOut = amountOut * 0.995 // 0.5% slippage guard
+
+        // Simulate TEE result
+        document.getElementById('result').style.display = 'block'
+        document.getElementById('teeReport').innerHTML =
+          `<span class="label">Enclave 0x8318535b54</span> routed <b>${tokenIn} → ${tokenOut}</b> at rate <b>${rate.toFixed(6)}</b><br>` +
+          `<span class="muted">Route details and price logic are private — only this summary is shown.</span>`
+
+        document.getElementById('routeBox').innerHTML =
+          `Expected output: <b>${amountOut.toFixed(4)} ${tokenOut}</b><br>` +
+          `Min output (0.5% slippage): <b>${minOut.toFixed(4)} ${tokenOut}</b><br>` +
+          `<span class="muted">Intermediate hops and exact path are hidden inside the TEE.</span>`
+
+        document.getElementById('txBox').innerHTML =
+          `executeSwap(<br>` +
+          `  user: <span class="label">0xBEAF</span>,<br>` +
+          `  tokenIn: <span class="label">FXRP</span>,<br>` +
+          `  tokenOut: <span class="label">${tokenOut}</span>,<br>` +
+          `  amountIn: <b>${amountIn} ${tokenIn}</b>,<br>` +
+          `  minAmountOut: <b>${minOut.toFixed(4)} ${tokenOut}</b>,<br>` +
+          `  deadline: <span class="label">block.timestamp + 3600</span>,<br>` +
+          `  nonce: <span class="label">0</span>,<br>` +
+          `  signature: <span class="label">0x181a...6c68e31c</span><br>` +
+          `)<br><br>` +
+          `<span class="muted">↑ This is the only data MEV bots can see.</span>`
+      }
+    </script>
+  </body>
+</html>

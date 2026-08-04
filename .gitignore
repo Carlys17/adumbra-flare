@@ -1,0 +1,8 @@
+.venv/
+out/
+cache/
+lib/
+script/
+tee/target/
+broadcast/
+*.log
