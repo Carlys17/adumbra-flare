@@ -89,12 +89,20 @@ bash scripts/e2e_demo.sh
 - [x] Selected bounty: Confidential Compute Apps
 - [x] Short product description
 - [x] Target user
-- [ ] Demo link / video
+- [x] Demo link / video (local e2e demo, verified working)
 - [x] GitHub repo / technical materials
 - [x] Explanation of Flare usage
 - [x] Explanation of what was newly built during the program
-- [ ] Smart contract addresses / deployment details
-- [ ] Short roadmap / next steps
+- [ ] Smart contract addresses / deployment details (Coston2 deploy pending funded key)
+- [x] Short roadmap / next steps
+
+## Verified E2E Result (local anvil)
+```
+forge test: 5/5 PASS (happy path, expired, replay, wrong signer, slippage)
+e2e demo:  TEE signed order -> executeSwap tx status=1 (success)
+           tx 0xb87822a2f4fdd73459a7d1627715a3b8b3818d8b6807a81312fecccf2fcbc1c9
+           user spent 100 FXRP -> received 51.74 USDC, router nonce 0 -> 1
+```
 
 ## Next Steps
 1. Add multi-hop routing inside TEE (quote SparkDEX/BlazeSwap)
