@@ -25,7 +25,7 @@ cast send $FXRP_ADDR "approve(address,uint256)" $CONTRACT_ADDR $AMT --private-ke
 
 echo "== 4. Build swap intent and call TEE (Rust) =="
 NONCE=$(cast call $CONTRACT_ADDR 'nonce()(uint256)' --rpc-url $RPC)
-ORDER=$(echo '{"user":"'$USER'","symbol_in":"FXRP","symbol_out":"USDC","token_in":"'$FXRP_ADDR'","token_out":"'$USDC_ADDR'","amount_in":"'$AMT'","slippage_bps":50}' | ENCLAVE_KEY=$KEY tee/target/release/mevswap-tee --intent - --deadline 3600 --nonce $NONCE)
+ORDER=$(echo '{"user":"'$USER'","symbol_in":"FXRP","symbol_out":"USDC","token_in":"'$FXRP_ADDR'","token_out":"'$USDC_ADDR'","amount_in":"'$AMT'","slippage_bps":50}' | ENCLAVE_KEY=$KEY tee/target/release/adumbra-enclave --intent - --deadline 3600 --nonce $NONCE)
 echo "$ORDER" | jq .
 
 MIN_OUT=$(echo "$ORDER" | jq -r '.min_amount_out')

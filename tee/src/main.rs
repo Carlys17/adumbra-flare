@@ -32,7 +32,7 @@ struct SwapIntent {
     nonce: Option<u64>,
 }
 
-/// The signed order that goes on-chain (matches MEVSwapRouter.SwapOrder).
+/// The signed order that goes on-chain (matches AdumbraRouter.SwapOrder).
 #[derive(Debug, Serialize)]
 struct SignedSwapOrder {
     user: String,
@@ -72,7 +72,11 @@ fn parse_addr(s: &str) -> anyhow::Result<[u8; 20]> {
 }
 
 /// Reproduce the exact on-chain digest:
-/// keccak256(abi.encode("MEVSwap", user, tokenIn, tokenOut, amountIn, minAmountOut, deadline, orderNonce))
+/// keccak256(abi.encode("Adumbra", user, tokenIn, tokenOut, amountIn, minAmountOut, deadline, orderNonce))
+///
+/// The domain separator is a 7-byte ABI string, matching AdumbraRouter.DOMAIN.
+/// Changing its length here requires recomputing the head offset below.
+const DOMAIN: &[u8] = b"Adumbra";
 fn build_digest(
     user: [u8; 20],
     token_in: [u8; 20],
@@ -110,12 +114,12 @@ fn build_digest(
 
     // String length word
     let mut w = [0u8; 32];
-    w[31] = 7;
+    w[31] = DOMAIN.len() as u8;
     buf.extend_from_slice(&w);
 
-    // String data ("MEVSwap", right-padded to 32 bytes)
+    // String data (domain separator, right-padded to 32 bytes)
     let mut w = [0u8; 32];
-    w[..7].copy_from_slice(b"MEVSwap");
+    w[..DOMAIN.len()].copy_from_slice(DOMAIN);
     buf.extend_from_slice(&w);
 
     Keccak256::digest(&buf).into()

@@ -20,10 +20,10 @@ asking users to change wallets or workflows.
 
 ## 5. Demo Link / Video / Working App
 - **Live on Coston2** — verified enclave-signed swap:
-  https://coston2-explorer.flare.network/tx/0x7fd340e3c1fa6f6eefe07baac20455e17fbcdb8428ef0027f427ed3be8d3ce25
+  https://coston2-explorer.flare.network/tx/0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6
 - **Frontend** — `frontend/index.html` (viem + MetaMask, wired to the Coston2 deployment).
   Run `cd frontend && python3 -m http.server 8080`, start the enclave with
-  `mevswap-tee --serve`, then open http://localhost:8080 with MetaMask on Coston2.
+  `adumbra-enclave --serve`, then open http://localhost:8080 with MetaMask on Coston2.
 - **Local end-to-end script** — `bash scripts/e2e_demo.sh` executes the entire flow
   against anvil: fund, approve, enclave sign, execute, verify balances.
 
@@ -71,7 +71,7 @@ the trade is already settled and no ordering advantage remains to extract.
 ## 8. What Was Newly Built During the Program
 Adumbra was built from scratch during the hackathon; there was no pre-existing project.
 
-- `MEVSwapRouter.sol` — enclave signature verification (`ecrecover`, EIP-2 low-s),
+- `AdumbraRouter.sol` — enclave signature verification (`ecrecover`, EIP-2 low-s),
   nonce replay guard, deadline enforcement, slippage floor, atomic execution.
 - `tee/src/main.rs` — the enclave service: private route computation, keccak256 digest
   construction byte-for-byte compatible with Solidity `abi.encode`, recoverable ECDSA
@@ -81,7 +81,8 @@ Adumbra was built from scratch during the hackathon; there was no pre-existing p
 - `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple, a shape
   `cast` cannot parse.
 - `scripts/e2e_demo.sh` — full local end-to-end verification run.
-- 5 Foundry tests: happy path, expired order, replayed nonce, wrong signer, slippage failure.
+- 6 Foundry tests: happy path, expired order, replayed nonce, wrong signer, tampered
+  order, slippage failure.
 - Coston2 deployment plus a verified on-chain enclave-signed swap.
 
 ## 9. Smart Contract Addresses / Deployment
@@ -89,29 +90,30 @@ Deployed on **Flare Coston2** (chainId 114, RPC `https://coston2-api.flare.netwo
 
 | Contract | Address |
 |---|---|
-| AdumbraRouter (MEVSwapRouter) | `0x393647f18a98b1CdDC51699FCC09cdca5Ec88fe7` |
-| Mock FXRP | `0x22f6e913FF7DcFaB517334e5cdd6A142047E945a` |
-| Mock USDC | `0x0F28c0801CB65fcA544cd43353E5aF993F44f690` |
+| AdumbraRouter | `0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7` |
+| Mock FXRP | `0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5` |
+| Mock USDC | `0x1cAAb501Cb8D7959e5Def5577863a4b346523552` |
 
-Verified enclave-signed swap: tx `0x7fd340e3c1fa6f6eefe07baac20455e17fbcdb8428ef0027f427ed3be8d3ce25`
-(block 33624550) — 100 FXRP in, 51.74 USDC out, router nonce 0 → 1.
+Verified enclave-signed swap: tx `0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6`
+(block 33625271) — 100 FXRP in, 51.74 USDC out, router nonce 0 → 1.
 
 ## 10. Technical Execution Evidence
 ```
 forge test
-[PASS] testHappyPath()          (gas: 133000)
-[PASS] testRevertExpired()      (gas: 30930)
-[PASS] testRevertReplay()       (gas: 130764)
-[PASS] testRevertSlippage()     (gas: 72194)
-[PASS] testRevertWrongSigner()  (gas: 37821)
-5 passed; 0 failed; 0 skipped
+[PASS] testHappyPath()           (gas: 133235)
+[PASS] testRevertExpired()       (gas: 30982)
+[PASS] testRevertReplay()        (gas: 131021)
+[PASS] testRevertSlippage()      (gas: 72450)
+[PASS] testRevertTamperedOrder() (gas: 36520)
+[PASS] testRevertWrongSigner()   (gas: 39451)
+6 passed; 0 failed; 0 skipped
 ```
 ```
 Enclave HTTP service — live response from POST localhost:7070/sign
 {
   "min_amount_out": "51740000000000000000",
-  "order_nonce": "1",
-  "signature": "0x1c0b038ab5bc0f110a29db3bd75fa7b98b5d86075fe2287837fcf81fba01c303...",
+  "order_nonce": "0",
+  "signature": "0x...",
   "tee_report": "Enclave 0x423ece2094 routed FXRP -> USDC at rate 0.520000"
 }
 ```

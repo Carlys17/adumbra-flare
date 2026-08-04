@@ -5,9 +5,9 @@
 
 Adumbra runs swap route selection inside a Trusted Execution Environment. The enclave
 computes the optimal path and the slippage floor privately, then signs a constrained
-order. On-chain, only the signature is verified and the order executed — the route, the
-quote, and the strategy never enter the public mempool, so MEV searchers have nothing to
-front-run.
+order. On-chain, only the enclave signature is verified and the order executed — the
+route, the exact quote, and the slippage strategy never enter the public mempool, so MEV
+searchers have nothing to front-run.
 
 *Adumbrare* (Latin) — to outline in shadow.
 
@@ -19,11 +19,11 @@ Flare Summer Signal — **Bounty 2: Confidential Compute Apps** ($6,000 pool)
 
 | Contract | Address |
 |---|---|
-| AdumbraRouter (MEVSwapRouter) | `0x393647f18a98b1CdDC51699FCC09cdca5Ec88fe7` |
-| Mock FXRP | `0x22f6e913FF7DcFaB517334e5cdd6A142047E945a` |
-| Mock USDC | `0x0F28c0801CB65fcA544cd43353E5aF993F44f690` |
+| AdumbraRouter | `0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7` |
+| Mock FXRP | `0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5` |
+| Mock USDC | `0x1cAAb501Cb8D7959e5Def5577863a4b346523552` |
 
-Verified enclave-signed swap on Coston2: tx [`0x7fd340e3c1fa6f6eefe07baac20455e17fbcdb8428ef0027f427ed3be8d3ce25`](https://coston2-explorer.flare.network/tx/0x7fd340e3c1fa6f6eefe07baac20455e17fbcdb8428ef0027f427ed3be8d3ce25) — 100 FXRP in, 51.74 USDC out, block 33624550, router nonce 0 → 1.
+Verified enclave-signed swap on Coston2: tx [`0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6`](https://coston2-explorer.flare.network/tx/0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6) — 100 FXRP in, 51.74 USDC out, block 33625271, router nonce 0 → 1.
 
 ## The Problem
 
@@ -94,9 +94,9 @@ left to extract.
 ```
 adumbra-flare/
 ├── src/
-│   ├── MEVSwapRouter.sol      # on-chain verification + execution
+│   ├── AdumbraRouter.sol      # on-chain verification + execution
 │   └── mocks/MockERC20.sol
-├── test/MEVSwapRouter.t.sol   # 5 Foundry tests
+├── test/AdumbraRouter.t.sol   # 6 Foundry tests
 ├── tee/
 │   ├── Cargo.toml
 │   └── src/main.rs            # enclave service: CLI + HTTP :7070 modes
@@ -127,12 +127,13 @@ Rust 1.78+, Foundry (`foundryup`), Python 3.12 with `eth-abi` and `pycryptodome`
 forge test
 ```
 ```
-[PASS] testHappyPath()          (gas: 133000)
-[PASS] testRevertExpired()      (gas: 30930)
-[PASS] testRevertReplay()       (gas: 130764)
-[PASS] testRevertSlippage()     (gas: 72194)
-[PASS] testRevertWrongSigner()  (gas: 37821)
-5 passed; 0 failed
+[PASS] testHappyPath()          (gas: 133235)
+[PASS] testRevertExpired()      (gas: 30982)
+[PASS] testRevertReplay()       (gas: 131021)
+[PASS] testRevertSlippage()     (gas: 72450)
+[PASS] testRevertTamperedOrder() (gas: 36520)
+[PASS] testRevertWrongSigner()  (gas: 39451)
+6 passed; 0 failed
 ```
 
 ### Enclave service
@@ -140,10 +141,10 @@ forge test
 cd tee && cargo build --release
 
 # one-shot CLI mode
-ENCLAVE_KEY=<hex> ./target/release/mevswap-tee --intent - --nonce 0 < intent.json
+ENCLAVE_KEY=<hex> ./target/release/adumbra-enclave --intent - --nonce 0 < intent.json
 
 # HTTP server mode (used by the frontend)
-ENCLAVE_KEY=<hex> ./target/release/mevswap-tee --serve   # listens on :7070
+ENCLAVE_KEY=<hex> ./target/release/adumbra-enclave --serve   # listens on :7070
 ```
 
 ### End-to-end demo (local anvil)
@@ -163,26 +164,25 @@ cd frontend && python3 -m http.server 8080
 
 Adumbra was built from scratch during Flare Summer Signal — there was no pre-existing project.
 
-- **`MEVSwapRouter.sol`** — enclave signature verification via `ecrecover` with EIP-2
+- `AdumbraRouter.sol` — enclave signature verification via `ecrecover` with EIP-2
   low-s enforcement, nonce replay guard, deadline enforcement, slippage floor, atomic
   swap execution.
-- **`tee/src/main.rs`** — the enclave service. Private route and rate computation,
-  keccak256 digest construction that is byte-for-byte compatible with Solidity's
-  `abi.encode`, recoverable ECDSA signing, plus both a CLI one-shot mode and an HTTP
-  `/sign` server mode with CORS for browser use.
-- **`frontend/index.html`** — viem + MetaMask app that reads the on-chain nonce, requests
-  an enclave signature over HTTP, handles ERC20 approval, and submits `executeSwap`.
-- **`scripts/encode_calldata.py`** — ABI encoder for the nested `SignedOrder` tuple, a
-  shape `cast` cannot parse.
-- **`scripts/e2e_demo.sh`** — full local end-to-end verification run.
-- **Coston2 deployment** and a verified on-chain enclave-signed swap.
+- `tee/src/main.rs` — the enclave service. Private route and rate computation,
+  keccak256 digest construction byte-compatible with Solidity `abi.encode`, recoverable
+  ECDSA signing, plus both a CLI one-shot mode and an HTTP `/sign` server mode with CORS.
+- `frontend/index.html` — viem + MetaMask app: reads the on-chain nonce, requests the
+  enclave signature, handles ERC20 approval, and submits `executeSwap`.
+- `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple, a shape
+  `cast` cannot parse.
+- `scripts/e2e_demo.sh` — full local end-to-end verification run.
+- Coston2 deployment and a verified on-chain enclave-signed swap.
 
 ## Roadmap
 
 1. **Real routing** — multi-hop quoting inside the enclave against SparkDEX and
    BlazeSwap, replacing the current dev rate table.
 2. **Attested keys** — on-chain verification of the SGX quote / Nitro PCR so the signing
-   key is provably enclave-bound rather than deployer-pinned.
+  key is provably enclave-bound rather than deployer-pinned.
 3. **AMM execution** — settle along the enclave-chosen path instead of the single-leg
    reserve model used for this demo.
 4. **Sealed-bid batching** — clear multiple intents in one batch so ordering-based MEV

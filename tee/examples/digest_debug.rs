@@ -19,7 +19,7 @@ fn main() {
     w[31] = 7;
     buf.extend_from_slice(&w);
     let mut w = [0u8; 32];
-    w[..7].copy_from_slice(b"MEVSwap");
+    w[..7].copy_from_slice(b"Adumbra");
     buf.extend_from_slice(&w);
     println!("{}", hex::encode(Keccak256::digest(&buf)));
 }

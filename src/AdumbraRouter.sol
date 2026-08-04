@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @title MEVSwapRouter
-/// @notice TEE-protected swap router for Flare. Swap intents are routed inside
-///         a confidential enclave (TEE). The enclave picks the optimal
-///         multi-hop path and emits a signed order. On-chain we only verify the
-///         enclave signature and execute the order atomically, so MEV bots
-///         never see the route/slippage logic until the tx is already mined.
+/// @title AdumbraRouter
+/// @notice Confidential order routing for FXRP on Flare.
+///
+///         Swap route selection happens inside a Trusted Execution Environment.
+///         The enclave computes the optimal path and the slippage floor
+///         privately, then signs a constrained order. On-chain we verify only
+///         the enclave signature and settle the order atomically, so the route,
+///         the exact quote, and the slippage strategy never enter the public
+///         mempool and MEV searchers have nothing to front-run.
+///
+///         Route in shadow. Settle on chain.
 interface IERC20Minimal {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
@@ -14,31 +19,36 @@ interface IERC20Minimal {
     function allowance(address owner, address spender) external view returns (uint256);
 }
 
-contract MEVSwapRouter {
+contract AdumbraRouter {
+    /// @dev Domain separator bound into every order digest. Must stay byte-for-byte
+    ///      identical to the value the enclave uses when building the digest.
+    ///      7 bytes, matching the enclave's manual ABI string encoding.
+    string private constant DOMAIN = "Adumbra";
+
     // --- Enclave verification ---
-    // The TEE signs orders with a key whose address is pinned at deploy time.
+    // The enclave signs orders with a key whose address is pinned at deploy time.
     // In production this is an attestation-backed key (SGX quote / Nitro PCR).
     address public immutable enclaveSigner;
     uint256 public nonce;
 
-    // Route steps are executed off-chain by the TEE; the contract only needs
-    // the final leg so it can pull tokens from the user and deliver the output.
+    // Route steps are executed off-chain inside the enclave; the contract only
+    // needs the final leg so it can pull tokens from the user and deliver output.
     struct SwapOrder {
         address user;          // who pays input
         address tokenIn;       // input token (e.g. FXRP)
         address tokenOut;      // output token (e.g. USDC)
         uint256 amountIn;      // exact input
-        uint256 minAmountOut;  // slippage guard set by TEE (hidden from MEV)
+        uint256 minAmountOut;  // slippage floor set by the enclave (hidden from MEV)
         uint256 deadline;      // block timestamp deadline
         uint256 orderNonce;    // replay protection
     }
 
-    // Signed intent from the enclave. The "route" is deliberately opaque:
-    // only tokenIn/tokenOut/amounts are revealed. The actual intermediate
-    // hops were decided inside the TEE and are not part of public calldata.
+    // Signed intent from the enclave. The route is deliberately opaque: only
+    // tokenIn/tokenOut/amounts are revealed. The intermediate hops were decided
+    // inside the enclave and are not part of public calldata.
     struct SignedOrder {
         SwapOrder order;
-        bytes signature;      // ECDSA over the order by enclaveSigner
+        bytes signature;      // ECDSA over the order digest by enclaveSigner
     }
 
     event SwapExecuted(
@@ -61,15 +71,15 @@ contract MEVSwapRouter {
         enclaveSigner = _enclaveSigner;
     }
 
-    /// @notice Execute a TEE-signed swap. Anyone may submit (relayers), but the
-    ///         order is bound to `user` so only they benefit.
+    /// @notice Execute an enclave-signed swap. Anyone may submit (relayers), but
+    ///         the order is bound to `user` so only they benefit.
     function executeSwap(SignedOrder calldata so) external returns (uint256 amountOut) {
         SwapOrder memory o = so.order;
         if (o.deadline < block.timestamp) revert Expired();
         if (o.orderNonce != nonce) revert Replay();
 
         bytes32 digest = keccak256(abi.encode(
-            "MEVSwap", o.user, o.tokenIn, o.tokenOut,
+            DOMAIN, o.user, o.tokenIn, o.tokenOut,
             o.amountIn, o.minAmountOut, o.deadline, o.orderNonce
         ));
         if (recoverSigner(digest, so.signature) != enclaveSigner) revert UnauthorizedSigner();
@@ -79,10 +89,9 @@ contract MEVSwapRouter {
             revert TransferFailed();
         }
 
-        // In this MVP the router is a single-leg direct swap: it holds a
-        // reserve of tokenOut. A full deployment routes through an AMM inside
-        // the TEE's chosen path; here we demonstrate the privacy + verification
-        // core.
+        // In this MVP the router settles a single leg against its own reserve of
+        // tokenOut. A full deployment settles along the AMM path the enclave
+        // chose; here we demonstrate the privacy + verification core.
         uint256 balOut = IERC20Minimal(o.tokenOut).balanceOf(address(this));
         if (balOut < o.minAmountOut) revert SlippageExceeded();
         amountOut = o.minAmountOut;
@@ -94,7 +103,7 @@ contract MEVSwapRouter {
 
     function recoverSigner(bytes32 digest, bytes calldata sig) internal pure returns (address) {
         (bytes32 r, bytes32 s, uint8 v) = splitSignature(sig);
-        // EIP-2: low-s
+        // EIP-2: reject high-s to prevent signature malleability
         if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
             revert UnauthorizedSigner();
         }
