@@ -1,4 +1,4 @@
-/// MEV-Safe FXRP Swap Router — TEE Service
+/// Adumbra — Confidential Order Routing for FXRP on Flare (enclave service)
 ///
 /// This binary runs inside a Trusted Execution Environment (e.g. Intel SGX
 /// or AWS Nitro Enclave). It receives swap intents from the wallet UI,
@@ -133,8 +133,7 @@ fn sign_intent(
     let rate = simulate_best_rate(&intent.symbol_in, &intent.symbol_out);
     let amount_in: u128 = intent.amount_in.parse()?;
     let expected_out = amount_in as f64 * rate;
-    let min_amount_out =
-        (expected_out * (1.0 - intent.slippage_bps as f64 / 10000.0)) as u128;
+    let min_amount_out = (expected_out * (1.0 - intent.slippage_bps as f64 / 10000.0)) as u128;
 
     let deadline = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)?
@@ -145,7 +144,15 @@ fn sign_intent(
     let token_in = parse_addr(&intent.token_in)?;
     let token_out = parse_addr(&intent.token_out)?;
 
-    let digest = build_digest(user, token_in, token_out, amount_in, min_amount_out, deadline, nonce);
+    let digest = build_digest(
+        user,
+        token_in,
+        token_out,
+        amount_in,
+        min_amount_out,
+        deadline,
+        nonce,
+    );
 
     let (sig, recid) = signing_key.sign_prehash_recoverable(&digest)?;
     let sig_bytes = sig.to_bytes();
@@ -179,7 +186,7 @@ fn sign_intent(
 
 /// CLI arguments
 #[derive(Parser)]
-#[command(about = "MEV-Safe FXRP Swap - TEE signing service")]
+#[command(about = "Adumbra — confidential order routing enclave service")]
 struct Cli {
     /// Path to a JSON file containing SwapIntent, or "-" for stdin
     #[arg(short, long, default_value = "-")]
@@ -236,11 +243,8 @@ fn run_server(signing_key: &SigningKey, deadline_offset: u64) -> anyhow::Result<
     for mut request in server.incoming_requests() {
         let is_options = request.method() == &tiny_http::Method::Options;
 
-        let cors_header = tiny_http::Header::from_bytes(
-            &b"Access-Control-Allow-Origin"[..],
-            &b"*"[..],
-        )
-        .unwrap();
+        let cors_header =
+            tiny_http::Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap();
 
         if is_options {
             let response = tiny_http::Response::from_string("")
@@ -295,8 +299,8 @@ fn run_server(signing_key: &SigningKey, deadline_offset: u64) -> anyhow::Result<
                         request.respond(response)?;
                     }
                     Err(e) => {
-                        let msg =
-                            serde_json::json!({"error": format!("signing failed: {e}")}).to_string();
+                        let msg = serde_json::json!({"error": format!("signing failed: {e}")})
+                            .to_string();
                         let response = tiny_http::Response::from_string(msg)
                             .with_status_code(500)
                             .with_header(cors_header)

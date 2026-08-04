@@ -2,7 +2,8 @@
 # End-to-end demo: TEE signs order -> on-chain executeSwap -> balances verified
 set -euo pipefail
 export PATH="$PATH:/root/.foundry/bin"
-cd /root/flare-swap-router
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(pwd)"
 
 source /tmp/addresses.env 2>/dev/null || { echo "Run deploy first: source /tmp/addresses.env"; exit 1; }
 
@@ -37,7 +38,7 @@ echo "  signature:          $SIG"
 
 echo "== 5. Execute swap on-chain =="
 ORDER_JSON='{"user":"'$USER'","tokenIn":"'$FXRP_ADDR'","tokenOut":"'$USDC_ADDR'","amountIn":"'$AMT'","minOut":"'$MIN_OUT'","deadline":"'$DEADLINE'","nonce":"'$NONCE'"}'
-CALLDATA=$(/root/flare-swap-router/.venv/bin/python3 /root/flare-swap-router/scripts/encode_calldata.py "$ORDER_JSON" "$SIG")
+CALLDATA=$("$REPO_ROOT/.venv/bin/python3" "$REPO_ROOT/scripts/encode_calldata.py" "$ORDER_JSON" "$SIG")
 echo "  calldata: ${CALLDATA:0:70}..."
 cast send $CONTRACT_ADDR $CALLDATA --private-key $USER_KEY --rpc-url $RPC 2>&1 | grep -E "status|transactionHash"
 
