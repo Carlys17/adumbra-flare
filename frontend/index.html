@@ -470,6 +470,7 @@
         custom,
         parseUnits,
         formatUnits,
+        encodeFunctionData,
       } from 'https://esm.sh/viem@2'
 
       const ROUTER_ADDR = '0x8D129cb1deb2736A86d97182c5809CBf1759Ab8c'
@@ -486,11 +487,32 @@
       const RATE = 0.5174
       const FXRP_USD = 0.52 // approximate USD price
 
+      // Deployed contract has different selectors than standard ABI encoding.
+      // These are the ACTUAL selectors from the deployed bytecode — DO NOT change.
+      const DEPLOYED_SELECTORS = {
+        nonce: '0xaffed0e0',
+        enclaveSigner: '0xb33f3e2a',
+        executeSwap: '0x9de44d55',
+        rescue: '0x7a4e4ecf',
+      }
+
       const routerAbi = [
         { inputs: [], name: 'nonce', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
         { inputs: [], name: 'enclaveSigner', outputs: [{ type: 'address' }], stateMutability: 'view', type: 'function' },
         { inputs: [{ components: [{ components: [{ name: 'user', type: 'address' }, { name: 'tokenIn', type: 'address' }, { name: 'tokenOut', type: 'address' }, { name: 'amountIn', type: 'uint256' }, { name: 'minAmountOut', type: 'uint256' }, { name: 'deadline', type: 'uint256' }, { name: 'orderNonce', type: 'uint256' }], name: 'order', type: 'tuple' }, { name: 'signature', type: 'bytes' }], name: 'so', type: 'tuple' }], name: 'executeSwap', outputs: [{ type: 'uint256' }], stateMutability: 'nonpayable', type: 'function' },
       ]
+
+      // Helper: raw eth_call with a specific selector (bypasses viem selector computation)
+      async function callWithSelector(address, selector) {
+        const data = await publicClient.request({ method: 'eth_call', params: [{ to: address, data: selector }, 'latest'] })
+        return data
+      }
+
+      // Helper: encode calldata with viem, then patch the 4-byte selector
+      function patchSelector(abiItem, args, deployedSelector) {
+        const encoded = encodeFunctionData({ abi: [abiItem], functionName: abiItem.name, args })
+        return deployedSelector + encoded.slice(10)
+      }
 
       const erc20Abi = [
         { inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'approve', outputs: [{ type: 'bool' }], stateMutability: 'nonpayable', type: 'function' },
@@ -681,11 +703,11 @@
         }
       }
 
-      // Nonce
+      // Nonce — use deployed selector (not standard ABI)
       async function refreshNonce() {
         try {
-          const n = await publicClient.readContract({ address: ROUTER_ADDR, abi: routerAbi, functionName: 'nonce' })
-          return n
+          const data = await callWithSelector(ROUTER_ADDR, DEPLOYED_SELECTORS.nonce)
+          return BigInt(data)
         } catch (e) { return null }
       }
 
@@ -879,11 +901,13 @@
         btnText.innerHTML = '<div class="spinner"></div> Executing swap...'
 
         try {
-          const hash = await walletClient.writeContract({
-            address: ROUTER_ADDR,
-            abi: routerAbi,
-            functionName: 'executeSwap',
-            args: [pending.signedOrder],
+          // Encode with viem, then patch selector to match deployed contract
+          const execAbiItem = routerAbi.find(f => f.name === 'executeSwap')
+          const patchedData = patchSelector(execAbiItem, [pending.signedOrder], DEPLOYED_SELECTORS.executeSwap)
+
+          const hash = await walletClient.sendTransaction({
+            to: ROUTER_ADDR,
+            data: patchedData,
             account,
           })
 
