@@ -20,11 +20,10 @@ asking users to change wallets or workflows.
 
 ## 5. Demo Link / Video / Working App
 - **Live web app** — https://adumbra.carly17.my.id/ — connect MetaMask on Coston2 and swap directly.
-- **Video walkthrough** — `media/adumbra_demo_video.mp4` (also `media/demo.gif`), rendered in the README.
-  Watch on YouTube: https://www.youtube.com/watch?v=F1YGEdOaawk
+- **Video walkthrough** — [Watch on YouTube](https://www.youtube.com/watch?v=F1YGEdOaawk)
   It is a real recorded run against the live Coston2 deployment: enclave signs,
   contract verifies, swap settles, balances and nonce change on chain. Reproduce it with
-  `bash scripts/demo_walkthrough.sh`.
+  `bash scripts/e2e_demo.sh`.
 - **Live on Coston2** — verified enclave-signed swap:
   https://coston2-explorer.flare.network/tx/0x1b70cd039ac67c20dff3ea77b299d79f74c57cda5c2a8d8530be7ce6b512432b
 - **Local end-to-end script** — `bash scripts/e2e_demo.sh` executes the entire flow
@@ -32,6 +31,9 @@ asking users to change wallets or workflows.
 
 ## 6. GitHub Repo
 https://github.com/Carlys17/adumbra-flare
+
+[![Foundry CI](https://github.com/Carlys17/adumbra-flare/actions/workflows/foundry-ci.yml/badge.svg)](https://github.com/Carlys17/adumbra-flare/actions/workflows/foundry-ci.yml)
+[![Rust CI](https://github.com/Carlys17/adumbra-flare/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/Carlys17/adumbra-flare/actions/workflows/rust-ci.yml)
 
 ## 7. How It Uses Flare
 
@@ -83,12 +85,12 @@ Adumbra was built from scratch during the hackathon; there was no pre-existing p
   enclave signature, handles ERC20 approval, submits `executeSwap`.
 - `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple.
 - `scripts/e2e_demo.sh` — full local end-to-end verification run.
-- `scripts/demo_walkthrough.sh` — narrated live-network walkthrough, recorded to
-  `media/demo.gif` / `.mp4`.
 - 6 Foundry tests: happy path, expired order, replayed nonce, wrong signer, tampered
   order, slippage failure.
 - Coston2 deployment, source-verified contracts, and multiple verified on-chain
   enclave-signed swaps.
+- **CI/CD** — automated Foundry + Rust tests on every PR via GitHub Actions.
+- **Production-ready repo** — LICENSE, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, CODEOWNERS.
 
 ## 9. Smart Contract Addresses / Deployment
 Deployed on **Flare Coston2** (chainId 114, RPC `https://coston2-api.flare.network/ext/C/rpc`):
@@ -135,8 +137,8 @@ forge test
 
 7. **Security audit** — independent smart contract + enclave code audit by a
    reputable firm before mainnet deployment.
-8. **CI/CD & fuzzing** — automated Foundry + Rust tests on every PR, plus
-   invariant/fuzz tests for edge cases in signature verification and routing.
+8. **CI/CD & fuzzing** — ✅ automated Foundry + Rust tests on every PR via GitHub Actions;
+   invariant/fuzz tests planned for edge cases in signature verification and routing.
 9. **Hardened enclave** — migrate from dev key to SGX/Nitro attested keys with
    on-chain quote verification, rate limiting, and monitoring/alerting.
 10. **Operational safeguards** — multi-sig governance, emergency pause, token
@@ -147,10 +149,12 @@ Deployed and verified on **Coston2**. Songbird and mainnet are the next steps.
 
 ## 13. Traction & Distribution Signals
 Solo builder. The full flow is live on Coston2 with a reproducible demo — anyone can
-run `bash scripts/demo_walkthrough.sh` and reproduce the recorded GIF end to end, which
+run `bash scripts/e2e_demo.sh` and reproduce the recorded demo end to end, which
 has been tested and fixed through real runs during development. The live web app at
 https://adumbra.carly17.my.id/ lets judges connect a wallet and execute an
 enclave-signed swap directly on Coston2.
+
+**DoraHacks submission:** https://dorahacks.io/buidl/47477
 
 ## Contact
 Carly E Sipahutar — sipahutarc3@gmail.com — GitHub [@Carlys17](https://github.com/Carlys17)
