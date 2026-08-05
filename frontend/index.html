@@ -292,7 +292,7 @@
               tokenIn: tokenInAddr,
               tokenOut: tokenOutAddr,
               amountIn: amountIn.toString(),
-              nonce: orderNonce.toString(),
+              nonce: Number(orderNonce),
             }),
           })
           if (!teeRes.ok) throw new Error('TEE returned ' + teeRes.status + ' ' + (await teeRes.text()))
