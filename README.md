@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Carlys17/adumbra-flare/blob/master/LICENSE)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.x-363636?logo=solidity)](https://github.com/Carlys17/adumbra-flare/tree/master/src)
 [![Rust](https://img.shields.io/badge/Rust-1.78+-ce3218?logo=rust)](https://github.com/Carlys17/adumbra-flare/tree/master/tee)
-[![Flare Coston2](https://img.shields.io/badge/Network-Coston2-blue?logo=ethereum)](https://coston2-explorer.flare.network/address/0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7)
+[![Flare Coston2](https://img.shields.io/badge/Network-Coston2-blue?logo=ethereum)](https://coston2-explorer.flare.network/address/0x8D129cb1deb2736A86d97182c5809CBf1759Ab8c)
 [![DoraHacks](https://img.shields.io/badge/DoraHacks-Flare%20Summer%20Signal-orange?logo=rocket)](https://dorahacks.io/buidl/47477)
 
 </div>
@@ -49,13 +49,13 @@ an order, the contract verifies it, and the swap settles on chain. Reproduce it 
 
 | Contract | Address |
 |---|---|
-| AdumbraRouter | [`0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7`](https://coston2-explorer.flare.network/address/0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7#code) |
+| AdumbraRouter | [`0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7`](https://coston2-explorer.flare.network/address/0x8D129cb1deb2736A86d97182c5809CBf1759Ab8c#code) |
 | Mock FXRP | [`0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5`](https://coston2-explorer.flare.network/address/0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5#code) |
 | Mock USDC | [`0x1cAAb501Cb8D7959e5Def5577863a4b346523552`](https://coston2-explorer.flare.network/address/0x1cAAb501Cb8D7959e5Def5577863a4b346523552#code) |
 
 All three contracts are **source-verified** on the Coston2 explorer.
 
-Verified enclave-signed swap on Coston2: tx [`0x1b70cd039ac67c20dff3ea77b299d79f74c57cda5c2a8d8530be7ce6b512432b`](https://coston2-explorer.flare.network/tx/0x1b70cd039ac67c20dff3ea77b299d79f74c57cda5c2a8d8530be7ce6b512432b) — 100 FXRP in, 51.74 USDC out, router nonce 8 → 9.
+Verified enclave-signed swap on Coston2 (v2 deployment): tx [`0x91d178778013ff42a9e84aff3f94f7a6171b34b42f94ecc724fe1397e0d0ff8e`](https://coston2-explorer.flare.network/tx/0x91d178778013ff42a9e84aff3f94f7a6171b34b42f94ecc724fe1397e0d0ff8e) — FXRP → USDC, router nonce 0 → 1.
 
 ## The Problem
 
