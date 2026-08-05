@@ -74,8 +74,17 @@ fn parse_addr(s: &str) -> anyhow::Result<[u8; 20]> {
 /// Reproduce the exact on-chain digest:
 /// keccak256(abi.encode("Adumbra", user, tokenIn, tokenOut, amountIn, minAmountOut, deadline, orderNonce))
 ///
-/// The domain separator is a 7-byte ABI string, matching AdumbraRouter.DOMAIN.
-/// Changing its length here requires recomputing the head offset below.
+/// Solidity abi.encode layout for (string, address, address, address, uint256, uint256, uint256, uint256):
+///   Word 0  (byte 0):   offset to string data = 9 * 32 = 288 = 0x120
+///   Word 1  (byte 32):  user (address, left-padded)
+///   Word 2  (byte 64):  tokenIn
+///   Word 3  (byte 96):  tokenOut
+///   Word 4  (byte 128): amountIn
+///   Word 5  (byte 160): minAmountOut
+///   Word 6  (byte 192): deadline
+///   Word 7  (byte 224): orderNonce
+///   Word 8  (byte 256): string length = 7
+///   Word 9  (byte 288): string data "Adumbra" (right-padded to 32 bytes)
 const DOMAIN: &[u8] = b"Adumbra";
 fn build_digest(
     user: [u8; 20],
@@ -88,9 +97,9 @@ fn build_digest(
 ) -> [u8; 32] {
     let mut buf = Vec::with_capacity(320);
 
-    // Word 0: offset to the dynamic string = 8 * 32 = 0x100
+    // Word 0: offset to the dynamic string = 9 * 32 = 288 = 0x120
     let mut w = [0u8; 32];
-    w[30] = 0x01; // big-endian: 0x0100 = 256
+    w[29] = 0x12; // big-endian: 0x120 = 288
     buf.extend_from_slice(&w);
 
     // Addresses (left-padded to 32 bytes)
@@ -125,13 +134,11 @@ fn build_digest(
     Keccak256::digest(&buf).into()
 }
 
-/// Sign a swap intent and return a signed order.  The nonce is provided
-/// externally (either from the CLI flag or the request body) so the same
-/// function can be used by both one-shot and server modes.
+/// Sign a swap intent and return a signed order.
 fn sign_intent(
     intent: &SwapIntent,
     signing_key: &SigningKey,
-    deadline: u64,
+    deadline_offset: u64,
     nonce: u64,
 ) -> anyhow::Result<SignedSwapOrder> {
     let rate = simulate_best_rate(&intent.symbol_in, &intent.symbol_out);
@@ -142,7 +149,7 @@ fn sign_intent(
     let deadline = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)?
         .as_secs()
-        + deadline;
+        + deadline_offset;
 
     let user = parse_addr(&intent.user)?;
     let token_in = parse_addr(&intent.token_in)?;
@@ -233,7 +240,7 @@ fn run_oneshot(cli: &Cli, signing_key: &SigningKey) -> anyhow::Result<()> {
         serde_json::from_str(&std::fs::read_to_string(&cli.intent)?)?
     };
 
-    let order = sign_intent(&intent, signing_key, cli.deadline, cli.nonce)?;
+    let order = sign_intent(&intent, &signing_key, cli.deadline, cli.nonce)?;
     println!("{}", serde_json::to_string_pretty(&order)?);
     Ok(())
 }
