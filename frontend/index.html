@@ -289,9 +289,9 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               user: account,
-              tokenIn: tokenInAddr,
-              tokenOut: tokenOutAddr,
-              amountIn: amountIn.toString(),
+              token_in: tokenInAddr,
+              token_out: tokenOutAddr,
+              amount_in: amountIn.toString(),
               symbol_in: tokenInKey.toUpperCase(),
               symbol_out: tokenOutKey.toUpperCase(),
               nonce: Number(orderNonce),
