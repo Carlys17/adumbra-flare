@@ -6,7 +6,7 @@ export PATH="$PATH:/root/.foundry/bin"
 cd /root/adumbra-flare
 source /root/flare-deployer.env
 
-ROUTER=0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7
+ROUTER=0x8D129cb1deb2736A86d97182c5809CBf1759Ab8c
 FXRP=0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5
 USDC=0x1cAAb501Cb8D7959e5Def5577863a4b346523552
 RPC=https://coston2-api.flare.network/ext/C/rpc

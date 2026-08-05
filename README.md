@@ -49,7 +49,7 @@ an order, the contract verifies it, and the swap settles on chain. Reproduce it 
 
 | Contract | Address |
 |---|---|
-| AdumbraRouter | [`0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7`](https://coston2-explorer.flare.network/address/0x8D129cb1deb2736A86d97182c5809CBf1759Ab8c#code) |
+| AdumbraRouter | [`0x8D129cb1deb2736A86d97182c5809CBf1759Ab8c`](https://coston2-explorer.flare.network/address/0x8D129cb1deb2736A86d97182c5809CBf1759Ab8c#code) |
 | Mock FXRP | [`0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5`](https://coston2-explorer.flare.network/address/0x92bdD788e158Db8d7b0F2Dc32ddefe0fC8783fC5#code) |
 | Mock USDC | [`0x1cAAb501Cb8D7959e5Def5577863a4b346523552`](https://coston2-explorer.flare.network/address/0x1cAAb501Cb8D7959e5Def5577863a4b346523552#code) |
 
