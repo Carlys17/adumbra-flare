@@ -101,10 +101,36 @@
             <span class="text-xs font-medium text-gray-300">Coston2</span>
           </div>
 
-          <!-- Connect Wallet Button -->
-          <button id="connectBtn" onclick="connectWallet()" class="px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 active:scale-[0.97] text-adumbra-950 font-semibold text-sm transition">
-            Connect Wallet
-          </button>
+          <!-- Wallet Dropdown -->
+          <div class="relative" id="walletDropdownWrapper">
+            <button id="connectBtn" onclick="connectWallet()" class="px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 active:scale-[0.97] text-adumbra-950 font-semibold text-sm transition">
+              Connect Wallet
+            </button>
+            <!-- Connected Dropdown Menu -->
+            <div id="walletMenu" class="hidden absolute right-0 top-full mt-2 w-64 bg-adumbra-900 border border-adumbra-700 rounded-xl overflow-hidden shadow-2xl animate-fade-in z-50">
+              <!-- Wallet Address -->
+              <div class="p-4 border-b border-adumbra-800">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="w-2 h-2 rounded-full bg-success-400"></span>
+                  <span class="text-xs font-medium text-gray-400">Connected</span>
+                </div>
+                <p id="walletAddress" class="text-sm font-mono text-white font-semibold">—</p>
+              </div>
+              <!-- Network Info -->
+              <div class="p-3 border-b border-adumbra-800 flex items-center justify-between">
+                <span class="text-xs text-gray-400">Network</span>
+                <span class="text-xs font-medium text-gray-200 flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-success-400"></span>
+                  Coston2
+                </span>
+              </div>
+              <!-- Disconnect -->
+              <button onclick="disconnectWallet()" class="w-full p-3 flex items-center gap-2 text-error-400 hover:bg-adumbra-800 transition text-sm font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Disconnect
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
@@ -556,6 +582,11 @@
 
       // Connect Wallet
       window.connectWallet = async function () {
+        if (account) {
+          // Already connected — toggle dropdown
+          document.getElementById('walletMenu').classList.toggle('hidden')
+          return
+        }
         if (!window.ethereum) return alert('MetaMask not detected.')
         try {
           document.getElementById('errorCard').classList.add('hidden')
@@ -564,9 +595,14 @@
           account = accs[0]
           walletClient = createWalletClient({ account, chain: { id: CHAIN_ID, name: 'Coston2', nativeCurrency: { name: 'CFLR', symbol: 'CFLR', decimals: 18 }, rpcUrls: { default: { http: [RPC_URL] } } }, transport: custom(window.ethereum) })
 
+          // Update button to show connected state
           document.getElementById('connectBtn').innerHTML = '<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-success-400"></span><span class="text-sm font-semibold">' + short(account) + '</span></div>'
           document.getElementById('connectBtn').classList.remove('bg-teal-500', 'hover:bg-teal-400', 'text-adumbra-950')
           document.getElementById('connectBtn').classList.add('bg-adumbra-800', 'border', 'border-adumbra-600', 'text-gray-200')
+          document.getElementById('connectBtn').onclick = connectWallet // toggle dropdown now
+
+          // Update wallet address in dropdown
+          document.getElementById('walletAddress').textContent = account
 
           const btn = document.getElementById('swapBtn')
           btn.disabled = false
@@ -578,6 +614,50 @@
           await refreshBalances()
         } catch (e) {}
       }
+
+      window.disconnectWallet = function () {
+        account = null
+        walletClient = null
+        window._pendingSwap = null
+
+        // Reset button
+        const btn = document.getElementById('connectBtn')
+        btn.innerHTML = 'Connect Wallet'
+        btn.classList.add('bg-teal-500', 'hover:bg-teal-400', 'text-adumbra-950')
+        btn.classList.remove('bg-adumbra-800', 'border', 'border-adumbra-600', 'text-gray-200')
+        btn.onclick = connectWallet
+
+        // Hide dropdown
+        document.getElementById('walletMenu').classList.add('hidden')
+
+        // Reset swap button
+        document.getElementById('swapBtn').disabled = true
+        document.getElementById('btnText').textContent = 'Connect Wallet'
+
+        // Reset balances
+        document.getElementById('balanceIn').textContent = '—'
+        document.getElementById('balanceIn').classList.add('skeleton')
+        document.getElementById('balanceOut').textContent = '—'
+        document.getElementById('balanceOut').classList.add('skeleton')
+
+        // Reset network badge
+        document.getElementById('networkBadge').innerHTML = '<span class="w-2 h-2 rounded-full bg-yellow-400"></span><span class="text-xs font-medium text-gray-300">Coston2</span>'
+
+        // Clear results
+        document.getElementById('result').classList.add('hidden')
+        document.getElementById('txResult').classList.add('hidden')
+        document.getElementById('successCard').classList.add('hidden')
+        document.getElementById('errorCard').classList.add('hidden')
+        document.getElementById('confirmModal').classList.add('hidden')
+      }
+
+      // Close wallet dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('walletDropdownWrapper')
+        if (!wrapper.contains(e.target)) {
+          document.getElementById('walletMenu').classList.add('hidden')
+        }
+      })
 
       // Main Swap Flow
       window.routeSwap = async function () {
