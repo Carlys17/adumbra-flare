@@ -1,0 +1,19 @@
+# Code Owners for Adumbra
+
+# Smart contracts
+/src/ @Carlys17
+
+# Enclave (Rust TEE)
+/tee/ @Carlys17
+
+# Frontend
+/frontend/ @Carlys17
+
+# Tests
+/test/ @Carlys17
+
+# CI/CD
+/.github/ @Carlys17
+
+# Documentation
+*.md @Carlys17
