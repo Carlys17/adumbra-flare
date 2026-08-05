@@ -222,6 +222,17 @@ Adumbra was built from scratch during Flare Summer Signal — there was no pre-e
    can evolve (attested keys, AMM routing, batching) without migrating users
    or re-deploying storage.
 
+### Production Readiness
+
+7. **Security audit** — independent smart contract + enclave code audit by a
+   reputable firm before mainnet deployment.
+8. **CI/CD & fuzzing** — automated Foundry + Rust tests on every PR, plus
+   invariant/fuzz tests for edge cases in signature verification and routing.
+9. **Hardened enclave** — migrate from dev key to SGX/Nitro attested keys with
+   on-chain quote verification, rate limiting, and monitoring/alerting.
+10. **Operational safeguards** — multi-sig governance, emergency pause, token
+    rescue via owner, and incident response playbooks.
+
 ## License
 
 MIT
