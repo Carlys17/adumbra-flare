@@ -20,7 +20,8 @@ asking users to change wallets or workflows.
 
 ## 5. Demo Link / Video / Working App
 - **Live web app** — https://adumbra.carly17.my.id/ — connect MetaMask on Coston2 and swap directly.
-- **Video walkthrough** — `media/demo.mp4` / `media/demo.gif`, rendered in the README.
+- **Video walkthrough** — `media/adumbra_demo_video.mp4` (also `media/demo.gif`), rendered in the README.
+  Watch on YouTube: https://www.youtube.com/watch?v=F1YGEdOaawk
   It is a real recorded run against the live Coston2 deployment: enclave signs,
   contract verifies, swap settles, balances and nonce change on chain. Reproduce it with
   `bash scripts/demo_walkthrough.sh`.
