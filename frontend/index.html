@@ -38,6 +38,10 @@
                 500: '#ef4444',
                 900: '#450a0a',
               },
+              warning: {
+                400: '#facc15',
+                500: '#eab308',
+              },
             },
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
@@ -87,18 +91,32 @@
           <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-teal-500/10 text-teal-400 border border-teal-500/20">CONFIDENTIAL</span>
         </div>
 
-        <!-- Right side: Network + Wallet -->
+        <!-- Right side: Network + TEE + Wallet -->
         <div class="flex items-center gap-3">
+          <!-- Network Switcher -->
+          <div class="relative" id="networkSwitcher">
+            <button onclick="toggleNetworkDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-adumbra-800 border border-adumbra-700 hover:border-adumbra-600 transition">
+              <span class="w-2 h-2 rounded-full bg-success-400"></span>
+              <span id="networkName" class="text-xs font-medium text-gray-300">Coston2</span>
+              <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="networkDropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-adumbra-900 border border-adumbra-700 rounded-xl overflow-hidden shadow-2xl animate-fade-in z-50">
+              <button onclick="selectNetwork('Coston2')" class="w-full flex items-center gap-2 px-4 py-3 hover:bg-adumbra-800 transition text-sm text-gray-300">
+                <span class="w-2 h-2 rounded-full bg-success-400"></span> Coston2
+              </button>
+              <button onclick="selectNetwork('Songbird')" class="w-full flex items-center gap-2 px-4 py-3 hover:bg-adumbra-800 transition text-sm text-gray-300">
+                <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Songbird
+              </button>
+              <button onclick="selectNetwork('Flare')" class="w-full flex items-center gap-2 px-4 py-3 hover:bg-adumbra-800 transition text-sm text-gray-300">
+                <span class="w-2 h-2 rounded-full bg-blue-400"></span> Flare Mainnet
+              </button>
+            </div>
+          </div>
+
           <!-- TEE Status -->
           <div id="teeBadge" class="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20">
             <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
             <span class="text-[10px] font-medium text-yellow-400">TEE Checking...</span>
-          </div>
-
-          <!-- Network Badge -->
-          <div id="networkBadge" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-adumbra-800 border border-adumbra-700">
-            <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
-            <span class="text-xs font-medium text-gray-300">Coston2</span>
           </div>
 
           <!-- Wallet Dropdown -->
@@ -140,12 +158,28 @@
 
       <!-- Swap Card -->
       <div class="w-full max-w-[480px]">
-        <!-- Card Header -->
+        
+        <!-- Recipient Toggle -->
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold text-white">Swap</h2>
-          <button onclick="toggleSettings()" class="p-2 rounded-lg hover:bg-adumbra-800 transition" title="Settings">
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          </button>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="recipientToggle" onchange="toggleRecipient()" class="sr-only peer">
+              <div class="w-9 h-5 bg-adumbra-700 rounded-full peer peer-checked:bg-teal-500/20 peer-checked:border peer-checked:border-teal-500/30 relative transition">
+                <div class="w-3 h-3 bg-gray-400 rounded-full absolute top-1 left-1 peer-checked:bg-teal-400 peer-checked:left-5 transition"></div>
+              </div>
+              <span class="text-xs text-gray-400">Send to different wallet</span>
+            </label>
+            <button onclick="toggleSettings()" class="p-2 rounded-lg hover:bg-adumbra-800 transition" title="Settings">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recipient Input -->
+        <div id="recipientInput" class="hidden mb-4 bg-adumbra-900 border border-adumbra-700 rounded-xl p-3 animate-fade-in">
+          <label class="text-xs text-gray-400 mb-1 block">Recipient</label>
+          <input type="text" placeholder="Wallet address or ENS name" class="w-full bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none mono" id="recipientAddress">
         </div>
 
         <!-- Swap Box -->
@@ -256,7 +290,7 @@
             <!-- Gas Estimate -->
             <div class="flex items-center justify-between py-2 border-t border-adumbra-800">
               <span class="text-sm text-gray-400">Est. gas</span>
-              <span class="text-sm font-mono text-gray-300">~133,235 gas</span>
+              <span class="text-sm font-mono text-gray-300">~133,235 gas (~$0.02)</span>
             </div>
 
             <!-- Min Received -->
@@ -272,6 +306,17 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4"></path></svg>
                 TEE (Confidential)
               </span>
+            </div>
+
+            <!-- Expert Mode -->
+            <div class="flex items-center justify-between py-2 border-t border-adumbra-800">
+              <span class="text-sm text-gray-400">Expert mode</span>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="expertMode" class="sr-only peer">
+                <div class="w-9 h-5 bg-adumbra-700 rounded-full peer peer-checked:bg-teal-500/20 peer-checked:border peer-checked:border-teal-500/30 relative transition">
+                  <div class="w-3 h-3 bg-gray-400 rounded-full absolute top-1 left-1 peer-checked:bg-teal-400 peer-checked:left-5 transition"></div>
+                </div>
+              </label>
             </div>
           </div>
         </div>
@@ -327,6 +372,17 @@
           </div>
         </div>
 
+        <!-- Transaction History -->
+        <div id="historyPanel" class="hidden mt-6 bg-adumbra-900 border border-adumbra-700 rounded-2xl p-4 animate-slide-up">
+          <h4 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Recent Transactions
+          </h4>
+          <div id="historyList" class="space-y-2 text-xs">
+            <!-- Mock history items will be injected here -->
+          </div>
+        </div>
+
         <!-- Footer -->
         <div class="mt-6 flex items-center justify-between text-xs text-gray-500">
           <a href="https://github.com/Carlys17/adumbra-flare" target="_blank" class="hover:text-teal-400 transition flex items-center gap-1">
@@ -337,7 +393,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
             Contract
           </a>
-          <span class="text-gray-600">v1.0.0</span>
+          <span class="text-gray-600">v2.1.0</span>
         </div>
       </div>
     </main>
@@ -368,12 +424,21 @@
             </div>
           </div>
 
+          <!-- Price Update Warning -->
+          <div id="priceUpdateWarning" class="hidden bg-warning-500/10 border border-warning-500/30 rounded-xl p-3 flex items-center gap-3">
+            <svg class="w-5 h-5 text-warning-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div>
+              <p class="text-sm font-semibold text-warning-400">Price has changed since you last updated</p>
+              <p class="text-xs text-gray-400 mt-0.5">The price impact is higher than expected. Please review and confirm.</p>
+            </div>
+          </div>
+
           <!-- Details -->
           <div class="space-y-2.5 text-sm">
             <div class="flex justify-between"><span class="text-gray-400">Rate</span><span class="text-gray-200 font-mono" id="confirmPrice">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Price impact</span><span class="text-gray-200 font-mono" id="confirmPriceImpact">~0.00%</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Slippage</span><span class="text-gray-200 font-mono" id="confirmSlippage">0.50%</span></div>
-            <div class="flex justify-between"><span class="text-gray-400">Est. gas</span><span class="text-gray-200 font-mono">~133,235 gas</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Est. gas</span><span class="text-gray-200 font-mono">~133,235 gas (~$0.02)</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Route</span><span class="text-teal-400 font-mono flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4"></path></svg> TEE (Confidential)</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Nonce</span><span class="text-gray-200 font-mono" id="confirmNonce">—</span></div>
           </div>
@@ -434,6 +499,7 @@
 
       let publicClient, walletClient, account
       let slippage = 0.5
+      let lastPriceImpact = 0
 
       publicClient = createPublicClient({
         chain: { id: CHAIN_ID, name: 'Coston2', nativeCurrency: { name: 'CFLR', symbol: 'CFLR', decimals: 18 }, rpcUrls: { default: { http: [RPC_URL] } } },
@@ -519,8 +585,16 @@
         document.getElementById('fiatOut').textContent = '$' + fiatOutVal.toFixed(2)
 
         // Price impact (simulated)
-        const impact = (Math.random() * 0.1).toFixed(2)
-        document.getElementById('priceImpact').innerHTML = 'Price impact: <span class="text-gray-400">~' + impact + '%</span>'
+        const impact = (Math.random() * 0.5).toFixed(2)
+        lastPriceImpact = parseFloat(impact)
+        
+        // Color-coded warnings
+        let impactColor = 'text-gray-400'
+        if (impact > 2) impactColor = 'text-error-400'
+        else if (impact > 0.5) impactColor = 'text-warning-400'
+        else impactColor = 'text-success-400'
+
+        document.getElementById('priceImpact').innerHTML = `Price impact: <span class="${impactColor}">~${impact}%</span>`
 
         // Min received
         const minReceivedVal = outAmount * (1 - slippage / 100)
@@ -552,6 +626,28 @@
         const activeBtn = document.getElementById('slip' + (val === 0.5 ? '05' : val))
         activeBtn.className = 'slippage-btn flex-1 py-2 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-400 text-sm font-medium transition'
         updateAmountOut()
+      }
+
+      // Recipient Toggle
+      window.toggleRecipient = function() {
+        const input = document.getElementById('recipientInput')
+        const checkbox = document.getElementById('recipientToggle')
+        if (checkbox.checked) {
+          input.classList.remove('hidden')
+          if (account) input.querySelector('input').value = account
+        } else {
+          input.classList.add('hidden')
+        }
+      }
+
+      // Network Switcher
+      window.toggleNetworkDropdown = function() {
+        document.getElementById('networkDropdown').classList.toggle('hidden')
+      }
+
+      window.selectNetwork = function(name) {
+        document.getElementById('networkName').textContent = name
+        document.getElementById('networkDropdown').classList.add('hidden')
       }
 
       // Balances
@@ -612,6 +708,7 @@
           networkBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-success-400"></span><span class="text-xs font-medium text-gray-300">Coston2</span>'
 
           await refreshBalances()
+          loadTransactionHistory() // Load mock history
         } catch (e) {}
       }
 
@@ -649,6 +746,7 @@
         document.getElementById('successCard').classList.add('hidden')
         document.getElementById('errorCard').classList.add('hidden')
         document.getElementById('confirmModal').classList.add('hidden')
+        document.getElementById('historyPanel').classList.add('hidden')
       }
 
       // Close wallet dropdown when clicking outside
@@ -657,19 +755,24 @@
         if (!wrapper.contains(e.target)) {
           document.getElementById('walletMenu').classList.add('hidden')
         }
+        const networkSwitcher = document.getElementById('networkSwitcher')
+        if (!networkSwitcher.contains(e.target)) {
+          document.getElementById('networkDropdown').classList.add('hidden')
+        }
       })
 
       // Main Swap Flow
       window.routeSwap = async function () {
         if (!account || !walletClient) return
         const inKey = document.getElementById('tokenInName').textContent.toLowerCase()
-        const outKey = document.getElementById('tokenOutName').textContent.toLowerCase()
+        constoutKey = document.getElementById('tokenOutName').textContent.toLowerCase()
         const amountRaw = document.getElementById('amountIn').value
         if (!amountRaw || parseFloat(amountRaw) <= 0) return
 
         const tokenInAddr = TOKENS[inKey]
         const tokenOutAddr = TOKENS[outKey]
         const amountIn = parseUnits(amountRaw, DECIMALS[inKey])
+        const recipient = document.getElementById('recipientToggle').classList.contains('active') ? document.getElementById('recipientAddr').value : account
 
         const btn = document.getElementById('swapBtn')
         const btnText = document.getElementById('btnText')
@@ -716,41 +819,54 @@
           document.getElementById('resDeadline').textContent = deadline
           document.getElementById('resSig').textContent = signature.slice(0, 18) + '...' + signature.slice(-8)
 
-          // Show confirmation modal
-          document.getElementById('confirmAmountIn').textContent = amountRaw + ' ' + SYMBOLS[inKey]
-          document.getElementById('confirmAmountOut').textContent = document.getElementById('amountOut').value + ' ' + SYMBOLS[outKey]
-          document.getElementById('confirmPrice').textContent = '1 ' + SYMBOLS[inKey] + ' = ' + (parseFloat(document.getElementById('amountOut').value) / parseFloat(amountRaw)).toFixed(6) + ' ' + SYMBOLS[outKey]
-          document.getElementById('confirmSlippage').textContent = slippage.toFixed(2) + '%'
-          document.getElementById('confirmNonce').textContent = String(orderNonce || 0)
-          document.getElementById('confirmSig').textContent = signature.slice(0, 20) + '...' + signature.slice(-10)
-          document.getElementById('confirmModal').classList.remove('hidden')
+          // Route visualization
+          updateRoutePath(SYMBOLS[inKey], SYMBOLS[outKey])
 
-          window._pendingSwap = {
-            signedOrder: {
-              order: { user: account, tokenIn: tokenInAddr, tokenOut: tokenOutAddr, amountIn, minAmountOut: BigInt(minAmountOut), deadline: BigInt(deadline), orderNonce },
-              signature,
-            },
+          // Expert mode check
+          if (!document.getElementById('expertMode').classList.contains('active')) {
+            // Show confirmation modal
+            document.getElementById('confirmAmountIn').textContent = amountRaw + ' ' + SYMBOLS[inKey]
+            document.getElementById('confirmAmountOut').textContent = document.getElementById('amountOut').value + ' ' + SYMBOLS[outKey]
+            document.getElementById('confirmPrice').textContent = '1 ' + SYMBOLS[inKey] + ' = ' + (parseFloat(document.getElementById('amountOut').value) / parseFloat(amountRaw)).toFixed(6) + ' ' + SYMBOLS[outKey]
+            document.getElementById('confirmSlippage').textContent = slippage.toFixed(2) + '%'
+            document.getElementById('confirmNonce').textContent = String(orderNonce || 0)
+            document.getElementById('confirmSig').textContent = signature.slice(0, 20) + '...' + signature.slice(-10)
+            document.getElementById('confirmRecipient').textContent = recipient === account ? 'To: ' + short(account) : 'To: ' + short(recipient)
+            document.getElementById('confirmModal').classList.remove('hidden')
+
+            window._pendingSwap = {
+              signedOrder: {
+                order: { user: recipient, tokenIn: tokenInAddr, tokenOut: tokenOutAddr, amountIn, minAmountOut: BigInt(minAmountOut), deadline: BigInt(deadline), orderNonce },
+                signature,
+              },
+            }
+            btnText.innerHTML = '<div class="spinner"></div> Confirm in modal...'
+          } else {
+            // Expert mode: execute directly
+            executeSwap({
+              signedOrder: {
+                order: { user: recipient, tokenIn: tokenInAddr, tokenOut: tokenOutAddr, amountIn, minAmountOut: BigInt(minAmountOut), deadline: BigInt(deadline), orderNonce },
+                signature,
+              },
+            })
           }
-          btnText.innerHTML = '<div class="spinner"></div> Confirm in modal...'
         } catch (e) {
           const errMsg = e.shortMessage || e.message || String(e)
           document.getElementById('errorMessage').textContent = errMsg
           document.getElementById('errorCard').classList.remove('hidden')
         } finally {
-          if (!window._pendingSwap) {
+          if (!window._pendingSwap && !document.getElementById('expertMode').classList.contains('active')) {
             btn.disabled = false
             btnText.textContent = 'Swap'
           }
         }
       }
 
-      window.confirmSwap = async function () {
-        document.getElementById('confirmModal').classList.add('hidden')
+      async function executeSwap(pending) {
         const btnText = document.getElementById('btnText')
         btnText.innerHTML = '<div class="spinner"></div> Executing swap...'
 
         try {
-          const pending = window._pendingSwap
           const hash = await walletClient.writeContract({
             address: ROUTER_ADDR,
             abi: routerAbi,
@@ -781,6 +897,18 @@
         }
       }
 
+      window.confirmSwap = async function () {
+        // Price update warning
+        const currentOut = parseFloat(document.getElementById('amountOut').value)
+        const modalOut = parseFloat(document.getElementById('confirmAmountOut').textContent)
+        if (currentOut && modalOut && Math.abs(currentOut - modalOut) / modalOut > 0.005) {
+          document.getElementById('priceWarning').classList.remove('hidden')
+        }
+
+        document.getElementById('confirmModal').classList.add('hidden')
+        await executeSwap(window._pendingSwap)
+      }
+
       window.cancelSwap = function () {
         document.getElementById('confirmModal').classList.add('hidden')
         window._pendingSwap = null
@@ -788,7 +916,10 @@
         document.getElementById('swapBtn').disabled = false
       }
 
-      // TEE health
+      function updateRoutePath(inSym, outSym) {
+        document.getElementById('routePath').innerHTML = '<span class="text-gray-400">' + inSym + '</span> <span class="text-teal-400">→</span> <span class="text-teal-400">[TEE]</span> <span class="text-teal-400">→</span> <span class="text-gray-400">' + outSym + '</span>'
+      }
+
       async function checkTEEHealth() {
         try {
           const res = await fetch(TEE_ENDPOINT, { method: 'HEAD' })
