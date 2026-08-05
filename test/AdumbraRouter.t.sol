@@ -7,10 +7,9 @@ import "../src/mocks/MockERC20.sol";
 
 contract AdumbraRouterTest is Test {
     AdumbraRouter router;
-    MockERC20 fXRP;    // input
-    MockERC20 usdc;    // output
+    MockERC20 fXRP;
+    MockERC20 usdc;
 
-    // Enclave signer key (dev only – a real TEE uses an attested key)
     uint256 enclavePriv = 0xabcd;
     address enclavePub;
 
@@ -22,14 +21,12 @@ contract AdumbraRouterTest is Test {
         fXRP = new MockERC20("Fake XRP", "FXRP", 1_000_000 ether);
         usdc = new MockERC20("Fake USDC", "USDC", 1_000_000 ether);
 
-        router = new AdumbraRouter(enclavePub);
+        router = new AdumbraRouter(enclavePub, address(this));
 
-        // Fund user with FXRP + approve
         fXRP.transfer(user, amountIn);
         vm.prank(user);
         fXRP.approve(address(router), amountIn);
 
-        // Fund router with USDC so it can pay output
         usdc.transfer(address(router), 200_000 ether);
     }
 
@@ -52,9 +49,9 @@ contract AdumbraRouterTest is Test {
             tokenIn: address(fXRP),
             tokenOut: address(usdc),
             amountIn: amountIn,
-            minAmountOut: 1 ether,   // router pays 1 USDC per 100 FXRP in this fixture
+            minAmountOut: 1 ether,
             deadline: block.timestamp + 3600,
-            orderNonce: router.nonce()
+            orderNonce: router.userNonces(user)
         });
 
         bytes32 digest = _digest(order);
@@ -76,9 +73,19 @@ contract AdumbraRouterTest is Test {
         assertEq(amountOut, so.order.minAmountOut);
     }
 
+    function testHappyPath_Relayer() public {
+        (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
+        address relayer = address(0xCAFE);
+
+        // Anyone can submit — order is bound to user, not msg.sender
+        vm.prank(relayer);
+        uint256 amountOut = router.executeSwap(so);
+        assertEq(amountOut, so.order.minAmountOut);
+    }
+
     function testRevertExpired() public {
         (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
-        vm.warp(block.timestamp + 4000); // past deadline
+        vm.warp(block.timestamp + 4000);
         vm.prank(user);
         vm.expectRevert(AdumbraRouter.Expired.selector);
         router.executeSwap(so);
@@ -86,7 +93,6 @@ contract AdumbraRouterTest is Test {
 
     function testRevertWrongSigner() public {
         (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
-        // Sign the same order with a key that is not the pinned enclave key
         bytes32 digest = _digest(so.order);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(0x1234, digest);
         so.signature = abi.encodePacked(r, s, v);
@@ -96,8 +102,6 @@ contract AdumbraRouterTest is Test {
     }
 
     function testRevertTamperedOrder() public {
-        // A valid enclave signature must not carry over to a modified order:
-        // bumping amountIn after signing changes the digest, so recovery fails.
         (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
         so.order.amountIn = amountIn + 1;
         vm.prank(user);
@@ -109,22 +113,20 @@ contract AdumbraRouterTest is Test {
         (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
         vm.prank(user);
         router.executeSwap(so);
-        // Replaying the same order fails the nonce check
         vm.prank(user);
         vm.expectRevert(AdumbraRouter.Replay.selector);
         router.executeSwap(so);
     }
 
     function testRevertSlippage() public {
-        // Sign an order demanding more USDC than the router holds
         AdumbraRouter.SwapOrder memory order = AdumbraRouter.SwapOrder({
             user: user,
             tokenIn: address(fXRP),
             tokenOut: address(usdc),
             amountIn: amountIn,
-            minAmountOut: 999_999 ether, // exceeds router balance
+            minAmountOut: 999_999 ether,
             deadline: block.timestamp + 3600,
-            orderNonce: router.nonce()
+            orderNonce: router.userNonces(user)
         });
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(enclavePriv, _digest(order));
         AdumbraRouter.SignedOrder memory so =
@@ -133,5 +135,74 @@ contract AdumbraRouterTest is Test {
         vm.prank(user);
         vm.expectRevert(AdumbraRouter.SlippageExceeded.selector);
         router.executeSwap(so);
+    }
+
+    function testPerUserNonces() public {
+        address user2 = address(0x1234);
+        fXRP.transfer(user2, amountIn);
+        vm.prank(user2);
+        fXRP.approve(address(router), amountIn);
+
+        // User 1 executes — their nonce goes 0 → 1
+        (AdumbraRouter.SignedOrder memory so1, ) = _makeOrder();
+        vm.prank(user1());
+        router.executeSwap(so1);
+        assertEq(router.userNonces(user), 1);
+        assertEq(router.userNonces(user2), 0); // user2 untouched
+    }
+
+    function testFuzz_RevertTamperedAmount(uint256 tamperAmount) public {
+        (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
+        so.order.amountIn = amountIn + tamperAmount;
+        vm.prank(user);
+        vm.expectRevert(AdumbraRouter.UnauthorizedSigner.selector);
+        router.executeSwap(so);
+    }
+
+    function testFuzz_RevertTamperedUser(address fuzzUser) public {
+        (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
+        so.order.user = fuzzUser;
+        vm.prank(user);
+        vm.expectRevert(AdumbraRouter.UnauthorizedSigner.selector);
+        router.executeSwap(so);
+    }
+
+    function testFuzz_RevertTamperedTokenIn(address fuzzToken) public {
+        (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
+        so.order.tokenIn = fuzzToken;
+        vm.prank(user);
+        vm.expectRevert(AdumbraRouter.UnauthorizedSigner.selector);
+        router.executeSwap(so);
+    }
+
+    function testFuzz_RevertTamperedMinOut(uint256 fuzzMinOut) public {
+        (AdumbraRouter.SignedOrder memory so, ) = _makeOrder();
+        so.order.minAmountOut = fuzzMinOut;
+        vm.prank(user);
+        vm.expectRevert(AdumbraRouter.UnauthorizedSigner.selector);
+        router.executeSwap(so);
+    }
+
+    function testRescue_AsOwner() public {
+        uint256 balBefore = fXRP.balanceOf(address(this));
+        router.rescue(address(fXRP), 1 ether);
+        assertEq(fXRP.balanceOf(address(this)), balBefore + 1 ether);
+    }
+
+    function testRevertRescue_NotOwner() public {
+        vm.prank(user);
+        vm.expectRevert("not owner");
+        router.rescue(address(fXRP), 1 ether);
+    }
+
+    function testRenounceOwnership() public {
+        router.renounceOwnership();
+        assertEq(router.owner(), address(0));
+        vm.expectRevert("not owner");
+        router.rescue(address(fXRP), 1 ether);
+    }
+
+    function user1() internal view returns (address) {
+        return user;
     }
 }
