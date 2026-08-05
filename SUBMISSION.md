@@ -141,5 +141,13 @@ Enclave HTTP service — live response from POST localhost:7070/sign
 ## 12. Deployment Target
 Deployed and verified on **Coston2**. Songbird and mainnet are the next steps.
 
+## 13. Traction & Distribution Signals
+Solo builder. The full flow is live on Coston2 with a reproducible demo — anyone can
+run `bash scripts/demo_walkthrough.sh` and reproduce the recorded GIF end to end, which
+has been tested and fixed through real runs during development. Next steps for
+distribution: share the deployment in the Flare Hackathon Telegram group for feedback,
+collect testnet trader feedback on Coston2, and target Songbird once the enclave keys
+are attestation-bound.
+
 ## Contact
 Carly E Sipahutar — sipahutarc3@gmail.com — GitHub [@Carlys17](https://github.com/Carlys17)
