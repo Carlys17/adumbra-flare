@@ -22,35 +22,33 @@ interface IERC20Minimal {
 contract AdumbraRouter {
     /// @dev Domain separator bound into every order digest. Must stay byte-for-byte
     ///      identical to the value the enclave uses when building the digest.
+    ///      7 bytes, matching the enclave's manual ABI string encoding.
     string private constant DOMAIN = "Adumbra";
 
     // --- Enclave verification ---
+    // The enclave signs orders with a key whose address is pinned at deploy time.
+    // In production this is an attestation-backed key (SGX quote / Nitro PCR).
     address public immutable enclaveSigner;
+    uint256 public nonce;
 
-    // Per-user nonces — each trader gets their own replay-protected sequence
-    mapping(address => uint256) public userNonces;
-
-    // --- Ownership (for rescue / upgrades) ---
-    address public owner;
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "not owner");
-        _;
-    }
-
+    // Route steps are executed off-chain inside the enclave; the contract only
+    // needs the final leg so it can pull tokens from the user and deliver output.
     struct SwapOrder {
-        address user;
-        address tokenIn;
-        address tokenOut;
-        uint256 amountIn;
-        uint256 minAmountOut;
-        uint256 deadline;
-        uint256 orderNonce;
+        address user;          // who pays input
+        address tokenIn;       // input token (e.g. FXRP)
+        address tokenOut;      // output token (e.g. USDC)
+        uint256 amountIn;      // exact input
+        uint256 minAmountOut;  // slippage floor set by the enclave (hidden from MEV)
+        uint256 deadline;      // block timestamp deadline
+        uint256 orderNonce;    // replay protection
     }
 
+    // Signed intent from the enclave. The route is deliberately opaque: only
+    // tokenIn/tokenOut/amounts are revealed. The intermediate hops were decided
+    // inside the enclave and are not part of public calldata.
     struct SignedOrder {
         SwapOrder order;
-        bytes signature;
+        bytes signature;      // ECDSA over the order digest by enclaveSigner
     }
 
     event SwapExecuted(
@@ -68,21 +66,17 @@ contract AdumbraRouter {
     error Replay();
     error TransferFailed();
 
-    constructor(address _enclaveSigner, address _owner) {
+    constructor(address _enclaveSigner) {
         require(_enclaveSigner != address(0), "zero signer");
-        require(_owner != address(0), "zero owner");
         enclaveSigner = _enclaveSigner;
-        owner = _owner;
     }
 
     /// @notice Execute an enclave-signed swap. Anyone may submit (relayers), but
     ///         the order is bound to `user` so only they benefit.
     function executeSwap(SignedOrder calldata so) external returns (uint256 amountOut) {
         SwapOrder memory o = so.order;
-
-        // === CHECKS ===
-        if (o.deadline < block.timestamp - 30) revert Expired();
-        if (o.orderNonce != userNonces[o.user]) revert Replay();
+        if (o.deadline < block.timestamp) revert Expired();
+        if (o.orderNonce != nonce) revert Replay();
 
         bytes32 digest = keccak256(abi.encode(
             DOMAIN, o.user, o.tokenIn, o.tokenOut,
@@ -90,22 +84,20 @@ contract AdumbraRouter {
         ));
         if (recoverSigner(digest, so.signature) != enclaveSigner) revert UnauthorizedSigner();
 
-        // === EFFECTS — state change BEFORE external calls (reentrancy guard) ===
-        unchecked {
-            userNonces[o.user] = o.orderNonce + 1;
-        }
-
-        // === INTERACTIONS ===
+        // Pull input from user.
         if (!IERC20Minimal(o.tokenIn).transferFrom(o.user, address(this), o.amountIn)) {
             revert TransferFailed();
         }
 
+        // In this MVP the router settles a single leg against its own reserve of
+        // tokenOut. A full deployment settles along the AMM path the enclave
+        // chose; here we demonstrate the privacy + verification core.
         uint256 balOut = IERC20Minimal(o.tokenOut).balanceOf(address(this));
         if (balOut < o.minAmountOut) revert SlippageExceeded();
         amountOut = o.minAmountOut;
-
         if (!IERC20Minimal(o.tokenOut).transfer(o.user, amountOut)) revert TransferFailed();
 
+        nonce = o.orderNonce + 1;
         emit SwapExecuted(o.user, o.tokenIn, o.tokenOut, o.amountIn, amountOut, o.orderNonce);
     }
 
@@ -128,12 +120,9 @@ contract AdumbraRouter {
         if (v < 27) v += 27;
     }
 
-    // --- Admin ---
-    function rescue(address token, uint256 amount) external onlyOwner {
-        require(IERC20Minimal(token).transfer(msg.sender, amount), "transfer failed");
-    }
-
-    function renounceOwnership() external onlyOwner {
-        owner = address(0);
+    // --- Admin / rescue ---
+    function rescue(address token, uint256 amount) external {
+        if (msg.sender != 0x000000000000000000000000000000000000dEaD) revert UnauthorizedSigner();
+        IERC20Minimal(token).transfer(msg.sender, amount);
     }
 }
