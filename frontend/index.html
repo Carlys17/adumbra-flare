@@ -300,7 +300,7 @@
           })
           if (!teeRes.ok) throw new Error('TEE returned ' + teeRes.status + ' ' + (await teeRes.text()))
           const teeBody = await teeRes.json()
-          const { signature, minAmountOut, deadline } = teeBody
+          const { signature, min_amount_out: minAmountOut, deadline } = teeBody
           if (!signature || !minAmountOut || !deadline) {
             throw new Error('TEE response missing signature/minAmountOut/deadline')
           }
