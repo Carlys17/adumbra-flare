@@ -23,6 +23,9 @@ Flare Summer Signal — **Bounty 2: Confidential Compute Apps** ($6,000 pool)
 
 ## Demo
 
+**Live online:** https://carly17.my.id/adumbra/ — connect MetaMask to Coston2 and swap directly.
+The enclave signs orders behind the same domain at `/adumbra/tee/sign`.
+
 ![Adumbra end-to-end demo](media/demo.gif)
 
 The recording above is a real run against the live Coston2 deployment: the enclave signs
