@@ -33,7 +33,7 @@ The enclave signs orders at `/tee/sign`.
 
 The video above is a real run against the live Coston2 deployment: the enclave signs
 an order, the contract verifies it, and the swap settles on chain. Reproduce it with
-`bash scripts/demo_walkthrough.sh` (raw asciinema cast in `media/demo.cast`).
+`bash scripts/e2e_demo.sh` on a local anvil fork.
 
 ## Live Deployment (Flare Coston2, chainId 114)
 
@@ -124,16 +124,13 @@ adumbra-flare/
 │   └── src/main.rs            # enclave service: CLI + HTTP :7070 modes
 ├── frontend/index.html        # viem + MetaMask wallet UI
 ├── media/
-│   ├── logo.png               # project logo
-│   ├── social-preview.png     # 1280x640 open-graph card
-│   ├── youtube_thumbnail.png  # YouTube thumbnail
-│   ├── demo.gif               # end-to-end run against live Coston2
-│   ├── demo.mp4
-│   └── demo.cast              # raw asciinema recording
+│   ├── logo.png                 # project logo
+│   ├── social-preview.png       # 1280x640 open-graph card
+│   ├── youtube_thumbnail.png    # YouTube thumbnail / video poster
+│   └── adumbra_demo_video.mp4   # end-to-end run against live Coston2
 ├── scripts/
-│   ├── demo_walkthrough.sh    # narrated live-network demo (recorded above)
-│   ├── e2e_demo.sh            # full local end-to-end run
-│   └── encode_calldata.py     # nested-tuple ABI encoder
+│   ├── e2e_demo.sh              # full local end-to-end run
+│   └── encode_calldata.py       # nested-tuple ABI encoder
 ├── SUBMISSION.md
 └── README.md
 ```
