@@ -29,9 +29,7 @@ The enclave signs orders at `/tee/sign`.
 **Video demo** — end-to-end enclave-signed swap on Coston2 (44 s, no voiceover):  
 [![Adumbra demo thumbnail](media/youtube_thumbnail.png)](https://www.youtube.com/watch?v=F1YGEdOaawk)
 
-![Adumbra end-to-end demo](media/demo.gif)
-
-The recording above is a real run against the live Coston2 deployment: the enclave signs
+The video above is a real run against the live Coston2 deployment: the enclave signs
 an order, the contract verifies it, and the swap settles on chain. Reproduce it with
 `bash scripts/demo_walkthrough.sh` (raw asciinema cast in `media/demo.cast`, full mp4 in
 `media/adumbra_demo_video.mp4`).
