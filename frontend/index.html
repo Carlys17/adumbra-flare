@@ -765,14 +765,14 @@
       window.routeSwap = async function () {
         if (!account || !walletClient) return
         const inKey = document.getElementById('tokenInName').textContent.toLowerCase()
-        constoutKey = document.getElementById('tokenOutName').textContent.toLowerCase()
+        const outKey = document.getElementById('tokenOutName').textContent.toLowerCase()
         const amountRaw = document.getElementById('amountIn').value
         if (!amountRaw || parseFloat(amountRaw) <= 0) return
 
         const tokenInAddr = TOKENS[inKey]
         const tokenOutAddr = TOKENS[outKey]
         const amountIn = parseUnits(amountRaw, DECIMALS[inKey])
-        const recipient = document.getElementById('recipientToggle').classList.contains('active') ? document.getElementById('recipientAddr').value : account
+        const recipient = document.getElementById('recipientToggle').checked ? document.getElementById('recipientAddress').value : account
 
         const btn = document.getElementById('swapBtn')
         const btnText = document.getElementById('btnText')
@@ -823,7 +823,7 @@
           updateRoutePath(SYMBOLS[inKey], SYMBOLS[outKey])
 
           // Expert mode check
-          if (!document.getElementById('expertMode').classList.contains('active')) {
+          if (!document.getElementById('expertMode').checked) {
             // Show confirmation modal
             document.getElementById('confirmAmountIn').textContent = amountRaw + ' ' + SYMBOLS[inKey]
             document.getElementById('confirmAmountOut').textContent = document.getElementById('amountOut').value + ' ' + SYMBOLS[outKey]
@@ -855,7 +855,7 @@
           document.getElementById('errorMessage').textContent = errMsg
           document.getElementById('errorCard').classList.remove('hidden')
         } finally {
-          if (!window._pendingSwap && !document.getElementById('expertMode').classList.contains('active')) {
+          if (!window._pendingSwap && !document.getElementById('expertMode').checked) {
             btn.disabled = false
             btnText.textContent = 'Swap'
           }
@@ -902,7 +902,7 @@
         const currentOut = parseFloat(document.getElementById('amountOut').value)
         const modalOut = parseFloat(document.getElementById('confirmAmountOut').textContent)
         if (currentOut && modalOut && Math.abs(currentOut - modalOut) / modalOut > 0.005) {
-          document.getElementById('priceWarning').classList.remove('hidden')
+          document.getElementById('priceUpdateWarning').classList.remove('hidden')
         }
 
         document.getElementById('confirmModal').classList.add('hidden')
