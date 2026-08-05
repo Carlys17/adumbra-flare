@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <title>Adumbra — Confidential Order Routing for FXRP</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,11 +28,16 @@
       .connect-bar button { width: auto; padding: 0.5rem 1rem; }
       .acc-chip { background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 0.35rem 0.7rem; font-family: monospace; font-size: 0.85rem; }
       .nonce-chip { background: #1a1f2b; border: 1px solid #30363d; border-radius: 6px; padding: 0.35rem 0.7rem; font-family: monospace; font-size: 0.85rem; color: #7ee787; }
+      .brand { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 0.5rem; }
+      .brand img { width: 48px; height: 48px; border-radius: 10px; }
     </style>
   </head>
   <body>
     <main>
-      <h1>Adumbra <span class="badge tee-badge">TEE</span></h1>
+      <div class="brand">
+        <img src="../media/logo.png" alt="Adumbra logo" />
+        <h1>Adumbra <span class="badge tee-badge">TEE</span></h1>
+      </div>
       <p class="subtitle">Confidential order routing for FXRP on Flare — route in shadow, settle on chain.</p>
 
       <div class="privacy-note">

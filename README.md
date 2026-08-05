@@ -1,7 +1,13 @@
+<div align="center">
+
+<img src="media/logo.png" alt="Adumbra" width="180" />
+
 # Adumbra
 
 **Confidential Order Routing for FXRP on Flare.**
 *Route in shadow. Settle on chain.*
+
+</div>
 
 Adumbra runs swap route selection inside a Trusted Execution Environment. The enclave
 computes the optimal path and the slippage floor privately, then signs a constrained
@@ -113,6 +119,8 @@ adumbra-flare/
 │   └── src/main.rs            # enclave service: CLI + HTTP :7070 modes
 ├── frontend/index.html        # viem + MetaMask wallet UI
 ├── media/
+│   ├── logo.png               # project logo
+│   ├── social-preview.png     # 1280x640 open-graph card
 │   ├── demo.gif               # end-to-end run against live Coston2
 │   ├── demo.mp4
 │   └── demo.cast              # raw asciinema recording
