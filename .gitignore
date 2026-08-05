@@ -1,8 +1,26 @@
+# Python / virtualenv
 .venv/
+__pycache__/
+*.pyc
+
+# Foundry
 out/
 cache/
 lib/
-script/
-tee/target/
 broadcast/
+
+# Rust / Cargo
+tee/target/
+
+# Logs and local files
 *.log
+addresses.env
+
+# Local-only media (keep repo media files)
+/tmp/
+local/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/

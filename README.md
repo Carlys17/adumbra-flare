@@ -43,14 +43,14 @@ an order, the contract verifies it, and the swap settles on chain. Reproduce it 
 
 All three contracts are **source-verified** on the Coston2 explorer.
 
-Verified enclave-signed swap on Coston2: tx [`0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6`](https://coston2-explorer.flare.network/tx/0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6) — 100 FXRP in, 51.74 USDC out, block 33625271, router nonce 0 → 1.
+Verified enclave-signed swap on Coston2: tx [`0x1b70cd039ac67c20dff3ea77b299d79f74c57cda5c2a8d8530be7ce6b512432b`](https://coston2-explorer.flare.network/tx/0x1b70cd039ac67c20dff3ea77b299d79f74c57cda5c2a8d8530be7ce6b512432b) — 100 FXRP in, 51.74 USDC out, router nonce 8 → 9.
 
 ## The Problem
 
 Every public swap leaks its own alpha. Route, amounts, and slippage tolerance sit in
 calldata in the mempool before execution — which is exactly the information a searcher
 needs to sandwich the trade. On Flare, FXRP and FAssets users inherit this problem from
-the EVM execution model itself, not from any bug in the DEX.
+the EVM execution model itself, not from any bug in a DEX.
 
 ## The Approach
 
@@ -124,6 +124,7 @@ adumbra-flare/
 ├── media/
 │   ├── logo.png               # project logo
 │   ├── social-preview.png     # 1280x640 open-graph card
+│   ├── youtube_thumbnail.png  # YouTube thumbnail
 │   ├── demo.gif               # end-to-end run against live Coston2
 │   ├── demo.mp4
 │   └── demo.cast              # raw asciinema recording
@@ -182,6 +183,9 @@ bash scripts/e2e_demo.sh
 ```
 
 ### Frontend
+**Live:** https://adumbra.carly17.my.id/ — connect MetaMask on Coston2 and swap directly.
+
+For local development:
 ```bash
 cd frontend && python3 -m http.server 8080
 # open http://localhost:8080 with MetaMask on Coston2
@@ -202,7 +206,7 @@ Adumbra was built from scratch during Flare Summer Signal — there was no pre-e
 - `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple, a shape
   `cast` cannot parse.
 - `scripts/e2e_demo.sh` — full local end-to-end verification run.
-- Coston2 deployment and a verified on-chain enclave-signed swap.
+- Coston2 deployment and multiple verified on-chain enclave-signed swaps.
 
 ## Roadmap
 

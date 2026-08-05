@@ -19,15 +19,13 @@ front-running, plus protocols and aggregators that want MEV-resistant execution 
 asking users to change wallets or workflows.
 
 ## 5. Demo Link / Video / Working App
-- **Video walkthrough** — `media/demo.gif` (also `media/demo.mp4`), rendered in the
-  README. It is a real recorded run against the live Coston2 deployment: enclave signs,
+- **Live web app** — https://adumbra.carly17.my.id/ — connect MetaMask on Coston2 and swap directly.
+- **Video walkthrough** — `media/demo.mp4` / `media/demo.gif`, rendered in the README.
+  It is a real recorded run against the live Coston2 deployment: enclave signs,
   contract verifies, swap settles, balances and nonce change on chain. Reproduce it with
   `bash scripts/demo_walkthrough.sh`.
 - **Live on Coston2** — verified enclave-signed swap:
-  https://coston2-explorer.flare.network/tx/0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6
-- **Frontend** — `frontend/index.html` (viem + MetaMask, wired to the Coston2 deployment).
-  **Live demo:** https://adumbra.carly17.my.id/ — connect MetaMask on Coston2 and swap
-  directly; the enclave signs at `/tee/sign`.
+  https://coston2-explorer.flare.network/tx/0x1b70cd039ac67c20dff3ea77b299d79f74c57cda5c2a8d8530be7ce6b512432b
 - **Local end-to-end script** — `bash scripts/e2e_demo.sh` executes the entire flow
   against anvil: fund, approve, enclave sign, execute, verify balances.
 
@@ -82,14 +80,14 @@ Adumbra was built from scratch during the hackathon; there was no pre-existing p
   signing, CLI one-shot mode plus an HTTP `/sign` server mode with CORS.
 - `frontend/index.html` — viem + MetaMask app: reads the on-chain nonce, requests the
   enclave signature, handles ERC20 approval, submits `executeSwap`.
-- `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple, a shape
-  `cast` cannot parse.
+- `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple.
 - `scripts/e2e_demo.sh` — full local end-to-end verification run.
 - `scripts/demo_walkthrough.sh` — narrated live-network walkthrough, recorded to
   `media/demo.gif` / `.mp4`.
 - 6 Foundry tests: happy path, expired order, replayed nonce, wrong signer, tampered
   order, slippage failure.
-- Coston2 deployment plus a verified on-chain enclave-signed swap.
+- Coston2 deployment, source-verified contracts, and multiple verified on-chain
+  enclave-signed swaps.
 
 ## 9. Smart Contract Addresses / Deployment
 Deployed on **Flare Coston2** (chainId 114, RPC `https://coston2-api.flare.network/ext/C/rpc`):
@@ -103,8 +101,8 @@ Deployed on **Flare Coston2** (chainId 114, RPC `https://coston2-api.flare.netwo
 All three contracts are **source-verified** on the Coston2 explorer (Solidity 0.8.33),
 so judges can read the deployed bytecode against the repo source directly.
 
-Verified enclave-signed swap: tx `0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6`
-(block 33625271) — 100 FXRP in, 51.74 USDC out, router nonce 0 → 1.
+Verified enclave-signed swap: tx `0x1b70cd039ac67c20dff3ea77b299d79f74c57cda5c2a8d8530be7ce6b512432b`
+(block 33647307) — 100 FXRP in, 51.74 USDC out, router nonce 8 → 9.
 
 ## 10. Technical Execution Evidence
 ```
@@ -116,15 +114,6 @@ forge test
 [PASS] testRevertTamperedOrder() (gas: 36520)
 [PASS] testRevertWrongSigner()   (gas: 39451)
 6 passed; 0 failed; 0 skipped
-```
-```
-Enclave HTTP service — live response from POST localhost:7070/sign
-{
-  "min_amount_out": "51740000000000000000",
-  "order_nonce": "0",
-  "signature": "0x...",
-  "tee_report": "Enclave 0x423ece2094 routed FXRP -> USDC at rate 0.520000"
-}
 ```
 
 ## 11. Roadmap / Next Steps
@@ -144,10 +133,9 @@ Deployed and verified on **Coston2**. Songbird and mainnet are the next steps.
 ## 13. Traction & Distribution Signals
 Solo builder. The full flow is live on Coston2 with a reproducible demo — anyone can
 run `bash scripts/demo_walkthrough.sh` and reproduce the recorded GIF end to end, which
-has been tested and fixed through real runs during development. Next steps for
-distribution: share the deployment in the Flare Hackathon Telegram group for feedback,
-collect testnet trader feedback on Coston2, and target Songbird once the enclave keys
-are attestation-bound.
+has been tested and fixed through real runs during development. The live web app at
+https://adumbra.carly17.my.id/ lets judges connect a wallet and execute an
+enclave-signed swap directly on Coston2.
 
 ## Contact
 Carly E Sipahutar — sipahutarc3@gmail.com — GitHub [@Carlys17](https://github.com/Carlys17)
