@@ -26,8 +26,8 @@ asking users to change wallets or workflows.
 - **Live on Coston2** — verified enclave-signed swap:
   https://coston2-explorer.flare.network/tx/0x15e696943c87289629a5cb2ad241a1fe8bdf4b5a0dc76e60a342052cb0322bf6
 - **Frontend** — `frontend/index.html` (viem + MetaMask, wired to the Coston2 deployment).
-  **Live demo:** https://carly17.my.id/adumbra/ — connect MetaMask on Coston2 and swap
-  directly; the enclave runs behind the same origin at `/adumbra/tee/sign`.
+  **Live demo:** https://adumbra.carly17.my.id/ — connect MetaMask on Coston2 and swap
+  directly; the enclave signs at `/tee/sign`.
 - **Local end-to-end script** — `bash scripts/e2e_demo.sh` executes the entire flow
   against anvil: fund, approve, enclave sign, execute, verify balances.
 
