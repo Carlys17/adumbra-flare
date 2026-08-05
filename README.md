@@ -7,6 +7,14 @@
 **Confidential Order Routing for FXRP on Flare.**
 *Route in shadow. Settle on chain.*
 
+[![Foundry CI](https://github.com/Carlys17/adumbra-flare/actions/workflows/foundry-ci.yml/badge.svg)](https://github.com/Carlys17/adumbra-flare/actions/workflows/foundry-ci.yml)
+[![Rust CI](https://github.com/Carlys17/adumbra-flare/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/Carlys17/adumbra-flare/actions/workflows/rust-ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Carlys17/adumbra-flare/blob/master/LICENSE)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.x-363636?logo=solidity)](https://github.com/Carlys17/adumbra-flare/tree/master/src)
+[![Rust](https://img.shields.io/badge/Rust-1.78+-ce3218?logo=rust)](https://github.com/Carlys17/adumbra-flare/tree/master/tee)
+[![Flare Coston2](https://img.shields.io/badge/Network-Coston2-blue?logo=ethereum)](https://coston2-explorer.flare.network/address/0xcA1BFA56281a5082EfcAa64bbd34653b0AfCCAc7)
+[![DoraHacks](https://img.shields.io/badge/DoraHacks-Flare%20Summer%20Signal-orange?logo=rocket)](https://dorahacks.io/buidl/47477)
+
 </div>
 
 Adumbra runs swap route selection inside a Trusted Execution Environment. The enclave
@@ -19,14 +27,16 @@ searchers have nothing to front-run.
 
 ## Hackathon
 
-Flare Summer Signal — **Bounty 2: Confidential Compute Apps** ($6,000 pool)
+🏆 **Flare Summer Signal — Bounty 2: Confidential Compute Apps** ($6,000 pool)
+
+[View on DoraHacks →](https://dorahacks.io/buidl/47477)
 
 ## Demo
 
 **Live online:** https://adumbra.carly17.my.id/ — connect MetaMask on Coston2 and swap directly.
 The enclave signs orders at `/tee/sign`.
 
-**Video demo** — end-to-end enclave-signed swap on Coston2 (44 s, no voiceover):  
+**Video demo** — end-to-end enclave-signed swap on Coston2 (44 s, no voiceover):
 <video src="media/adumbra_demo_video.mp4" controls width="100%" poster="media/youtube_thumbnail.png"></video>
 
 [Watch on YouTube](https://www.youtube.com/watch?v=F1YGEdOaawk)
@@ -115,14 +125,21 @@ left to extract.
 
 ```
 adumbra-flare/
+├── .github/
+│   ├── CODEOWNERS
+│   └── workflows/
+│       ├── foundry-ci.yml      # Solidity tests + gas report
+│       └── rust-ci.yml         # Enclave tests + clippy
 ├── src/
-│   ├── AdumbraRouter.sol      # on-chain verification + execution
+│   ├── AdumbraRouter.sol       # on-chain verification + execution
 │   └── mocks/MockERC20.sol
-├── test/AdumbraRouter.t.sol   # 6 Foundry tests
+├── test/
+│   └── AdumbraRouter.t.sol     # 6 Foundry tests (all passing)
 ├── tee/
 │   ├── Cargo.toml
-│   └── src/main.rs            # enclave service: CLI + HTTP :7070 modes
-├── frontend/index.html        # viem + MetaMask wallet UI
+│   └── src/main.rs             # enclave service: CLI + HTTP :7070 modes
+├── frontend/
+│   └── index.html              # viem + MetaMask wallet UI
 ├── media/
 │   ├── logo.png                 # project logo
 │   ├── social-preview.png       # 1280x640 open-graph card
@@ -131,8 +148,13 @@ adumbra-flare/
 ├── scripts/
 │   ├── e2e_demo.sh              # full local end-to-end run
 │   └── encode_calldata.py       # nested-tuple ABI encoder
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── SECURITY.md
 ├── SUBMISSION.md
-└── README.md
+└── foundry.toml
 ```
 
 ## Stack
@@ -206,6 +228,8 @@ Adumbra was built from scratch during Flare Summer Signal — there was no pre-e
   `cast` cannot parse.
 - `scripts/e2e_demo.sh` — full local end-to-end verification run.
 - Coston2 deployment and multiple verified on-chain enclave-signed swaps.
+- **CI/CD** — automated Foundry + Rust tests on every PR via GitHub Actions.
+- **Production-ready repo** — LICENSE, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, CODEOWNERS.
 
 ## Roadmap
 
@@ -226,8 +250,8 @@ Adumbra was built from scratch during Flare Summer Signal — there was no pre-e
 
 7. **Security audit** — independent smart contract + enclave code audit by a
    reputable firm before mainnet deployment.
-8. **CI/CD & fuzzing** — automated Foundry + Rust tests on every PR, plus
-   invariant/fuzz tests for edge cases in signature verification and routing.
+8. **CI/CD & fuzzing** — ✅ automated Foundry + Rust tests on every PR via GitHub Actions;
+   invariant/fuzz tests planned for edge cases in signature verification and routing.
 9. **Hardened enclave** — migrate from dev key to SGX/Nitro attested keys with
    on-chain quote verification, rate limiting, and monitoring/alerting.
 10. **Operational safeguards** — multi-sig governance, emergency pause, token
