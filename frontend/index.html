@@ -511,14 +511,22 @@
       function short(addr) { return addr.slice(0, 6) + '...' + addr.slice(-4) }
 
       // Token UI helpers
-      function getTokenIconHTML(key) {
-        if (key === 'fxrp') return '<span class="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-xs font-bold text-adumbra-950">F</span>'
-        return '<span class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-xs font-bold text-white">U</span>'
+      function updateTokenIcon(iconEl, key) {
+        // FXRP: teal gradient, dark text
+        if (key === 'fxrp') {
+          iconEl.className = 'w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-xs font-bold text-adumbra-950'
+          iconEl.textContent = 'F'
+        } else {
+          // USDC: blue gradient, white text
+          iconEl.className = 'w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-xs font-bold text-white'
+          iconEl.textContent = 'U'
+        }
       }
 
       function updateTokenUI(direction, key) {
         const suffix = direction === 'in' ? 'In' : 'Out'
-        document.getElementById('token' + suffix + 'Icon').outerHTML = getTokenIconHTML(key).replace('w-6 h-6', 'w-6 h-6')
+        const iconEl = document.getElementById('token' + suffix + 'Icon')
+        if (iconEl) updateTokenIcon(iconEl, key)
         document.getElementById('token' + suffix + 'Name').textContent = SYMBOLS[key]
       }
 
@@ -531,6 +539,10 @@
       }
 
       window.selectToken = function(direction, key) {
+        const otherDir = direction === 'in' ? 'out' : 'in'
+        const otherKey = document.getElementById('token' + (otherDir === 'in' ? 'In' : 'Out') + 'Name').textContent.toLowerCase()
+        // Prevent selecting same token for both sides
+        if (key === otherKey) return
         updateTokenUI(direction, key)
         document.getElementById('token' + (direction === 'in' ? 'In' : 'Out') + 'Dropdown').classList.add('hidden')
         updateAmountOut()
