@@ -493,7 +493,7 @@
       ]
 
       const erc20Abi = [
-        { inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'approve', outputs: [{ type: 'bool' }], stateMutability: 'view', type: 'function' },
+        { inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'approve', outputs: [{ type: 'bool' }], stateMutability: 'nonpayable', type: 'function' },
         { inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], name: 'allowance', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
         { inputs: [{ name: 'account', type: 'address' }], name: 'balanceOf', outputs: [{ type: 'uint256' }], stateMutability: 'view', type: 'function' },
       ]
@@ -709,7 +709,6 @@
           networkBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-success-400"></span><span class="text-xs font-medium text-gray-300">Coston2</span>'
 
           await refreshBalances()
-          loadTransactionHistory() // Load mock history
         } catch (e) {}
       }
 
