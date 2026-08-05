@@ -218,6 +218,9 @@ Adumbra was built from scratch during Flare Summer Signal — there was no pre-e
 4. **Sealed-bid batching** — clear multiple intents in one batch so ordering-based MEV
    disappears entirely rather than being merely hidden.
 5. **Songbird, then Flare mainnet.**
+6. **Upgradeable proxy** — deploy behind a Transparent/UUPS proxy so the logic
+   can evolve (attested keys, AMM routing, batching) without migrating users
+   or re-deploying storage.
 
 ## License
 

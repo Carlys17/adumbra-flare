@@ -127,6 +127,9 @@ forge test
 4. **Sealed-bid batching** — clear multiple intents together so ordering-based MEV
    disappears entirely rather than being merely hidden.
 5. **Songbird, then Flare mainnet.**
+6. **Upgradeable proxy** — deploy behind a Transparent/UUPS proxy so the logic
+   can evolve (attested keys, AMM routing, batching) without migrating users
+   or re-deploying storage.
 
 ## 12. Deployment Target
 Deployed and verified on **Coston2**. Songbird and mainnet are the next steps.
