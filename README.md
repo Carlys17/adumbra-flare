@@ -13,7 +13,6 @@
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.x-363636?logo=solidity)](https://github.com/Carlys17/adumbra-flare/tree/master/src)
 [![Rust](https://img.shields.io/badge/Rust-1.78+-ce3218?logo=rust)](https://github.com/Carlys17/adumbra-flare/tree/master/tee)
 [![Flare Coston2](https://img.shields.io/badge/Network-Coston2-blue?logo=ethereum)](https://coston2-explorer.flare.network/address/0x8D129cb1deb2736A86d97182c5809CBf1759Ab8c)
-[![DoraHacks](https://img.shields.io/badge/DoraHacks-Flare%20Summer%20Signal-orange?logo=rocket)](https://dorahacks.io/buidl/47477)
 
 </div>
 
@@ -25,23 +24,16 @@ searchers have nothing to front-run.
 
 *Adumbrare* (Latin) — to outline in shadow.
 
-## Hackathon
-
-🏆 **Flare Summer Signal — Bounty 2: Confidential Compute Apps** ($6,000 pool)
-
-[View on DoraHacks →](https://dorahacks.io/buidl/47477)
-
 ## Demo
 
 **Live online:** https://adumbra.carly17.my.id/ — connect MetaMask on Coston2 and swap directly.
 The enclave signs orders at `/tee/sign`.
 
 **Video demo** — end-to-end enclave-signed swap on Coston2 (44 s, no voiceover):
-<video src="media/adumbra_demo_video.mp4" controls width="100%" poster="media/youtube_thumbnail.png"></video>
 
 [Watch on YouTube](https://www.youtube.com/watch?v=F1YGEdOaawk)
 
-The video above is a real run against the live Coston2 deployment: the enclave signs
+The demo above is a real run against the live Coston2 deployment: the enclave signs
 an order, the contract verifies it, and the swap settles on chain. Reproduce it with
 `bash scripts/e2e_demo.sh` on a local anvil fork.
 
@@ -142,10 +134,9 @@ adumbra-flare/
 │   └── index.html              # viem + MetaMask wallet UI
 ├── media/
 │   ├── logo.png                 # project logo
-│   ├── social-preview.png       # 1280x640 open-graph card
-│   ├── youtube_thumbnail.png    # YouTube thumbnail / video poster
-│   └── adumbra_demo_video.mp4   # end-to-end run against live Coston2
+│   └── social-preview.png       # 1280x640 open-graph card
 ├── scripts/
+│   ├── demo_walkthrough.sh      # live Coston2 walkthrough script
 │   ├── e2e_demo.sh              # full local end-to-end run
 │   └── encode_calldata.py       # nested-tuple ABI encoder
 ├── CHANGELOG.md
@@ -153,9 +144,24 @@ adumbra-flare/
 ├── LICENSE
 ├── README.md
 ├── SECURITY.md
-├── SUBMISSION.md
 └── foundry.toml
 ```
+
+## Components
+
+- `AdumbraRouter.sol` — enclave signature verification via `ecrecover` with EIP-2
+  low-s enforcement, nonce replay guard, deadline enforcement, slippage floor, atomic
+  swap execution.
+- `tee/src/main.rs` — the enclave service. Private route and rate computation,
+  keccak256 digest construction byte-compatible with Solidity `abi.encode`, recoverable
+  ECDSA signing, plus both a CLI one-shot mode and an HTTP `/sign` server mode with CORS.
+- `frontend/index.html` — viem + MetaMask app: reads the on-chain nonce, requests the
+  enclave signature, handles ERC20 approval, and submits `executeSwap`.
+- `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple, a shape
+  `cast` cannot parse.
+- `scripts/e2e_demo.sh` — full local end-to-end verification run.
+- `scripts/demo_walkthrough.sh` — live Coston2 walkthrough against the deployed contract.
+- **CI/CD** — automated Foundry + Rust tests on every PR via GitHub Actions.
 
 ## Stack
 
@@ -212,31 +218,12 @@ cd frontend && python3 -m http.server 8080
 # open http://localhost:8080 with MetaMask on Coston2
 ```
 
-## Built During the Program
-
-Adumbra was built from scratch during Flare Summer Signal — there was no pre-existing project.
-
-- `AdumbraRouter.sol` — enclave signature verification via `ecrecover` with EIP-2
-  low-s enforcement, nonce replay guard, deadline enforcement, slippage floor, atomic
-  swap execution.
-- `tee/src/main.rs` — the enclave service. Private route and rate computation,
-  keccak256 digest construction byte-compatible with Solidity `abi.encode`, recoverable
-  ECDSA signing, plus both a CLI one-shot mode and an HTTP `/sign` server mode with CORS.
-- `frontend/index.html` — viem + MetaMask app: reads the on-chain nonce, requests the
-  enclave signature, handles ERC20 approval, and submits `executeSwap`.
-- `scripts/encode_calldata.py` — ABI encoder for the nested `SignedOrder` tuple, a shape
-  `cast` cannot parse.
-- `scripts/e2e_demo.sh` — full local end-to-end verification run.
-- Coston2 deployment and multiple verified on-chain enclave-signed swaps.
-- **CI/CD** — automated Foundry + Rust tests on every PR via GitHub Actions.
-- **Production-ready repo** — LICENSE, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, CODEOWNERS.
-
 ## Roadmap
 
 1. **Real routing** — multi-hop quoting inside the enclave against SparkDEX and
    BlazeSwap, replacing the current dev rate table.
 2. **Attested keys** — on-chain verification of the SGX quote / Nitro PCR so the signing
-  key is provably enclave-bound rather than deployer-pinned.
+   key is provably enclave-bound rather than deployer-pinned.
 3. **AMM execution** — settle along the enclave-chosen path instead of the single-leg
    reserve model used for this demo.
 4. **Sealed-bid batching** — clear multiple intents in one batch so ordering-based MEV
@@ -245,17 +232,12 @@ Adumbra was built from scratch during Flare Summer Signal — there was no pre-e
 6. **Upgradeable proxy** — deploy behind a Transparent/UUPS proxy so the logic
    can evolve (attested keys, AMM routing, batching) without migrating users
    or re-deploying storage.
-
-### Production Readiness
-
 7. **Security audit** — independent smart contract + enclave code audit by a
    reputable firm before mainnet deployment.
-8. **CI/CD & fuzzing** — ✅ automated Foundry + Rust tests on every PR via GitHub Actions;
-   invariant/fuzz tests planned for edge cases in signature verification and routing.
-9. **Hardened enclave** — migrate from dev key to SGX/Nitro attested keys with
+8. **Hardened enclave** — migrate from dev key to SGX/Nitro attested keys with
    on-chain quote verification, rate limiting, and monitoring/alerting.
-10. **Operational safeguards** — multi-sig governance, emergency pause, token
-    rescue via owner, and incident response playbooks.
+9. **Operational safeguards** — multi-sig governance, emergency pause, token
+   rescue via owner, and incident response playbooks.
 
 ## License
 
